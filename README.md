@@ -49,10 +49,13 @@ Para evitar que te pierdas en este extenso documento, he anclado hipervínculos 
 
 ### 📸 Galería del Sistema
 
-| Vista 1 | Vista 2 | Vista 3 | Vista 4 | Vista 5 | Vista 6 | Vista 7 | Vista 8 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| <img src="img/Screenshot_1.png" width="100%"> | <img src="img/Screenshot_2.png" width="100%"> | <img src="img/Screenshot_3.png" width="100%"> | <img src="img/Screenshot_4.png" width="100%"> | <img src="img/Screenshot_5.png" width="100%"> | <img src="img/Screenshot_6.png" width="100%"> | <img src="img/Screenshot_7.png" width="100%"> | <img src="img/Screenshot_8.png" width="100%"> |
-| <img src="img/Screenshot_9.png" width="100%"> | <img src="img/Screenshot_10.png" width="100%"> | <img src="img/Screenshot_11.png" width="100%"> | <img src="img/Screenshot_12.png" width="100%"> | <img src="img/Screenshot_13.png" width="100%"> | <img src="img/Screenshot_14.png" width="100%"> | <img src="img/Screenshot_15.png" width="100%"> | <img src="img/Screenshot_16.png" width="100%"> |
+| Col 1 | Col 2 | Col 3 | Col 4 |
+| --- | --- | --- | --- |
+| <img src="img/Screenshot_1.png" width="100%"> | <img src="img/Screenshot_2.png" width="100%"> | <img src="img/Screenshot_3.png" width="100%"> | <img src="img/Screenshot_4.png" width="100%"> |
+| <img src="img/Screenshot_5.png" width="100%"> | <img src="img/Screenshot_6.png" width="100%"> | <img src="img/Screenshot_7.png" width="100%"> | <img src="img/Screenshot_8.png" width="100%"> |
+| <img src="img/Screenshot_9.png" width="100%"> | <img src="img/Screenshot_10.png" width="100%"> | <img src="img/Screenshot_11.png" width="100%"> | <img src="img/Screenshot_12.png" width="100%"> |
+| <img src="img/Screenshot_13.png" width="100%"> | <img src="img/Screenshot_14.png" width="100%"> | <img src="img/Screenshot_15.png" width="100%"> | <img src="img/Screenshot_16.png" width="100%"> |
+
 
 
 

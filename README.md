@@ -51,8 +51,6 @@ Para evitar que te pierdas en este extenso documento, he anclado hipervínculos 
 
 Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM guiado), compuesta por los siguientes proyectos:
 
-`ext
-
 1. **CRUD_LOGIN_MAUI**: La aplicación cliente multiplataforma.
 2. **CRUD_LOGIN_MAUI.Api**: El backend (API REST) encargado de servicios pesados como la generación de PDFs.
 3. **CRUD_LOGIN_MAUI.Tests**: Pruebas unitarias e integrales para garantizar la estabilidad.
@@ -61,6 +59,7 @@ Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM gu
 
 ## 📦 Árbol de la solución
 
+```text
 CRUD_LOGIN_MAUI/
 │
 ├── CRUD_LOGIN_MAUI.Api/               <-- Backend (.NET Core Web API)
@@ -106,8 +105,7 @@ CRUD_LOGIN_MAUI/
 └── CRUD_LOGIN_MAUI.Tests/             <-- Pruebas (xUnit)
     ├── IntegracionE2ETests.cs         <-- Pruebas de Integración End-to-End
     └── VentaServiceTests.cs           <-- Pruebas Unitarias del Servicio de Ventas
-
-`
+```
 
 ---
 ---

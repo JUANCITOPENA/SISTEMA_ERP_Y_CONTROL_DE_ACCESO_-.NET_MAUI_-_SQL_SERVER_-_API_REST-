@@ -45,6 +45,73 @@ Para evitar que te pierdas en este extenso documento, he anclado hipervínculos 
 ---
 ---
 
+
+
+## 📂 ESTRUCTURA DEL PROYECTO
+
+Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM guiado), compuesta por los siguientes proyectos:
+
+`ext
+
+1. **CRUD_LOGIN_MAUI**: La aplicación cliente multiplataforma.
+2. **CRUD_LOGIN_MAUI.Api**: El backend (API REST) encargado de servicios pesados como la generación de PDFs.
+3. **CRUD_LOGIN_MAUI.Tests**: Pruebas unitarias e integrales para garantizar la estabilidad.
+
+---
+
+## 📦 Árbol de la solución
+
+CRUD_LOGIN_MAUI/
+│
+├── CRUD_LOGIN_MAUI.Api/               <-- Backend (.NET Core Web API)
+│   ├── Program.cs
+│   ├── appsettings.json
+│   ├── CRUD_LOGIN_MAUI.Api.http
+│   ├── Controllers/
+│   │   └── PdfController.cs
+│   ├── Models/
+│   │   └── TicketRequest.cs
+│   └── Services/
+│       └── TicketPdfGenerator.cs
+│
+├── CRUD_LOGIN_MAUI/                   <-- Frontend (.NET MAUI)
+│   ├── App.xaml / App.xaml.cs
+│   ├── AppShell.xaml / AppShell.xaml.cs
+│   ├── MauiProgram.cs
+│   ├── Models/                        <-- Entidades de Datos
+│   │   ├── Categoria.cs
+│   │   ├── Cliente.cs
+│   │   ├── DetalleVenta.cs
+│   │   ├── Producto.cs
+│   │   ├── ResumenVenta.cs
+│   │   ├── Rol.cs
+│   │   ├── Usuario.cs
+│   │   ├── Vendedor.cs
+│   │   └── Venta.cs
+│   ├── Services/                      <-- Lógica de Negocio y Conexiones
+│   │   ├── ConfigDB.cs                <-- Centralización de la Cadena de Conexión
+│   │   ├── VentaService.cs
+│   │   └── TicketPdfService.cs
+│   └── Views/                         <-- Interfaces de Usuario (XAML + CS)
+│       ├── MainPage.xaml / MainPage.xaml.cs          <-- Login
+│       ├── AdminPage.xaml / AdminPage.xaml.cs        <-- Panel de Administrador
+│       ├── AlmacenistaPage.xaml / AlmacenistaPage.xaml.cs  <-- Dashboard de Almacén
+│       ├── InventarioPage.xaml / InventarioPage.xaml.cs    <-- CRUD de Productos
+│       ├── ReportesPage.xaml / ReportesPage.xaml.cs        <-- Reportes Generales
+│       ├── ResumenVentasPage.xaml / ResumenVentasPage.xaml.cs <-- Resumen de Ventas
+│       ├── RolesPage.xaml / RolesPage.xaml.cs              <-- Gestión de Roles
+│       ├── SupervisorPage.xaml / SupervisorPage.xaml.cs    <-- Panel de Supervisor
+│       └── VendedorPage.xaml / VendedorPage.xaml.cs        <-- Panel de Vendedor
+│
+└── CRUD_LOGIN_MAUI.Tests/             <-- Pruebas (xUnit)
+    ├── IntegracionE2ETests.cs         <-- Pruebas de Integración End-to-End
+    └── VentaServiceTests.cs           <-- Pruebas Unitarias del Servicio de Ventas
+
+`
+
+---
+---
+
 ## ⚙️ INTRODUCCIÓN AL MODELO Y ENTORNO
 
 ### 📸 Galería del Sistema

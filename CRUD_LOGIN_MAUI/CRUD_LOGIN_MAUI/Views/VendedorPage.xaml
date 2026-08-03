@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CRUD_LOGIN_MAUI.Models"
+             x:Class="CRUD_LOGIN_MAUI.Views.VendedorPage"
+             Title="Punto de Venta (POS)"
+             BackgroundColor="#f8fafc"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="20">
+        
+        <!-- Header: Cliente y Producto -->
+        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,20">
+            <Label Text="🛍️ NUEVA VENTA" FontSize="24" FontAttributes="Bold" TextColor="#1e293b"/>
+            
+            <Frame BackgroundColor="White" Padding="15" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
+                <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" ColumnSpacing="15" RowSpacing="15">
+                    
+                    <Picker x:Name="pickerCliente" Title="👤 Seleccione Cliente" ItemDisplayBinding="{Binding Nombre}" Grid.Row="0" Grid.Column="0"/>
+                    
+                    <Picker x:Name="pickerProducto" Title="📦 Seleccione Producto" ItemDisplayBinding="{Binding Nombre}" Grid.Row="0" Grid.Column="1"/>
+                    
+                    <Entry x:Name="txtCantidad" Placeholder="Cantidad" Keyboard="Numeric" Grid.Row="1" Grid.Column="0"/>
+                    
+                    <Button Text="➕ Agregar al Carrito" BackgroundColor="#10b981" TextColor="White" Clicked="OnAgregarClicked" Grid.Row="1" Grid.Column="1"/>
+                </Grid>
+            </Frame>
+        </VerticalStackLayout>
+
+        <!-- Body: Carrito de Compras -->
+        <Frame Grid.Row="1" BackgroundColor="White" Padding="10" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
+            <VerticalStackLayout>
+                <Grid ColumnDefinitions="3*, 1*, 2*, 2*" Padding="5" BackgroundColor="#e2e8f0">
+                    <Label Text="Producto" FontAttributes="Bold" Grid.Column="0"/>
+                    <Label Text="Cant" FontAttributes="Bold" HorizontalTextAlignment="Center" Grid.Column="1"/>
+                    <Label Text="Precio" FontAttributes="Bold" HorizontalTextAlignment="End" Grid.Column="2"/>
+                    <Label Text="Total" FontAttributes="Bold" HorizontalTextAlignment="End" Grid.Column="3"/>
+                </Grid>
+                
+                <CollectionView x:Name="listaCarrito" Margin="0,10,0,0">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:DetalleVenta">
+                            <Grid ColumnDefinitions="3*, 1*, 2*, 2*" Padding="5,10">
+                                <Label Text="{Binding ProductoNombre}" VerticalOptions="Center" Grid.Column="0"/>
+                                <Label Text="{Binding Cantidad}" HorizontalTextAlignment="Center" VerticalOptions="Center" Grid.Column="1"/>
+                                <Label Text="{Binding PrecioVentaAplicado, StringFormat='{0:C}'}" HorizontalTextAlignment="End" VerticalOptions="Center" Grid.Column="2"/>
+                                <Label Text="{Binding Total, StringFormat='{0:C}'}" FontAttributes="Bold" HorizontalTextAlignment="End" VerticalOptions="Center" Grid.Column="3" TextColor="#0f172a"/>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Footer: Total y Botón de Cobrar -->
+        <VerticalStackLayout Grid.Row="2" Spacing="15" Margin="0,20,0,0">
+            <Frame BackgroundColor="#1e293b" Padding="20" CornerRadius="10">
+                <Grid ColumnDefinitions="*, Auto">
+                    <Label Text="TOTAL A PAGAR:" TextColor="White" FontSize="20" FontAttributes="Bold" VerticalOptions="Center" Grid.Column="0"/>
+                    <Label x:Name="lblTotal" Text="$0.00" TextColor="#10b981" FontSize="28" FontAttributes="Bold" Grid.Column="1"/>
+                </Grid>
+            </Frame>
+            
+            <Button Text="💵 COBRAR E IMPRIMIR" BackgroundColor="#3b82f6" TextColor="White" FontSize="18" FontAttributes="Bold" HeightRequest="60" CornerRadius="10" Clicked="OnCobrarClicked"/>
+            <Button Text="📊 VER REPORTE HISTÓRICO" BackgroundColor="#8b5cf6" TextColor="White" FontSize="16" FontAttributes="Bold" HeightRequest="50" CornerRadius="10" Clicked="OnVerReporteClicked"/>
+            <Button Text="Cerrar sesión" BackgroundColor="#ef4444" TextColor="White" Margin="0,10,0,0" Clicked="OnLogoutClicked"/>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

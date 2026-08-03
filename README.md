@@ -125,6 +125,7 @@ CRUD_LOGIN_MAUI/
 ---
 ---
 
+
 En el desarrollo de software moderno, construir aplicaciones robustas requiere separar correctamente las responsabilidades. Un teléfono móvil no debería encargarse de tareas intensivas de procesamiento como generar un archivo PDF pesado. Esas tareas deben ser delegadas a un servidor (API).
 
 ### 🏗️ ¿Qué tipo de proyecto es este?

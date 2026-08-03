@@ -49,3 +49,9 @@ update_roles.py
 *.jfm
 *.pvc
 *.pyc
+
+# Ignorar documentos locales
+CRUD_LOGIN_MAUI/README*.md
+CRUD_LOGIN_MAUI/PLAN*.md
+CRUD_LOGIN_MAUI/*.py
+CRUD_LOGIN_MAUI/*.ps1

@@ -1,9 +1,14 @@
-﻿# 📘 LA BIBLIA DE INGENIERÍA JPV PRO V3.0
+# 📘 LA BIBLIA DE INGENIERÍA JPV PRO V3.0
 ## SISTEMA ERP Y CONTROL DE ACCESO (.NET MAUI + SQL SERVER + API REST)
 
 ---
 
 ## 🚀 PRESENTACIÓN GLOBAL DEL PROYECTO
+
+<p align="center">
+  <img src="img/Screenshot_32.png" alt="Portada del Proyecto">
+</p>
+
 
 ¡Bienvenido al **Manual Definitivo** de Desarrollo de Software Empresarial! 
 
@@ -40,7 +45,85 @@ Para evitar que te pierdas en este extenso documento, he anclado hipervínculos 
 ---
 ---
 
+
+
+## 📂 ESTRUCTURA DEL PROYECTO
+
+Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM guiado), compuesta por los siguientes proyectos:
+
+1. **CRUD_LOGIN_MAUI**: La aplicación cliente multiplataforma.
+2. **CRUD_LOGIN_MAUI.Api**: El backend (API REST) encargado de servicios pesados como la generación de PDFs.
+3. **CRUD_LOGIN_MAUI.Tests**: Pruebas unitarias e integrales para garantizar la estabilidad.
+
+---
+
+## 📦 Árbol de la solución
+
+<pre><code>
+CRUD_LOGIN_MAUI/
+│
+├── CRUD_LOGIN_MAUI.Api/               &lt;-- Backend (.NET Core Web API)
+│   ├── Program.cs
+│   ├── appsettings.json
+│   ├── CRUD_LOGIN_MAUI.Api.http
+│   ├── Controllers/
+│   │   └── PdfController.cs
+│   ├── Models/
+│   │   └── TicketRequest.cs
+│   └── Services/
+│       └── TicketPdfGenerator.cs
+│
+├── CRUD_LOGIN_MAUI/                   &lt;-- Frontend (.NET MAUI)
+│   ├── App.xaml / App.xaml.cs
+│   ├── AppShell.xaml / AppShell.xaml.cs
+│   ├── MauiProgram.cs
+│   ├── Models/                        &lt;-- Entidades de Datos
+│   │   ├── Categoria.cs
+│   │   ├── Cliente.cs
+│   │   ├── DetalleVenta.cs
+│   │   ├── Producto.cs
+│   │   ├── ResumenVenta.cs
+│   │   ├── Rol.cs
+│   │   ├── Usuario.cs
+│   │   ├── Vendedor.cs
+│   │   └── Venta.cs
+│   ├── Services/                      &lt;-- Lógica de Negocio y Conexiones
+│   │   ├── ConfigDB.cs                &lt;-- Centralización de la Cadena de Conexión
+│   │   ├── VentaService.cs
+│   │   └── TicketPdfService.cs
+│   └── Views/                         &lt;-- Interfaces de Usuario (XAML + CS)
+│       ├── MainPage.xaml / MainPage.xaml.cs          &lt;-- Login
+│       ├── AdminPage.xaml / AdminPage.xaml.cs        &lt;-- Panel de Administrador
+│       ├── AlmacenistaPage.xaml / AlmacenistaPage.xaml.cs  &lt;-- Dashboard de Almacén
+│       ├── InventarioPage.xaml / InventarioPage.xaml.cs    &lt;-- CRUD de Productos
+│       ├── ReportesPage.xaml / ReportesPage.xaml.cs        &lt;-- Reportes Generales
+│       ├── ResumenVentasPage.xaml / ResumenVentasPage.xaml.cs &lt;-- Resumen de Ventas
+│       ├── RolesPage.xaml / RolesPage.xaml.cs              &lt;-- Gestión de Roles
+│       ├── SupervisorPage.xaml / SupervisorPage.xaml.cs    &lt;-- Panel de Supervisor
+│       └── VendedorPage.xaml / VendedorPage.xaml.cs        &lt;-- Panel de Vendedor
+│
+└── CRUD_LOGIN_MAUI.Tests/             &lt;-- Pruebas (xUnit)
+    ├── IntegracionE2ETests.cs         &lt;-- Pruebas de Integración End-to-End
+    └── VentaServiceTests.cs           &lt;-- Pruebas Unitarias del Servicio de Ventas
+</code></pre>
+
+---
+---
+
 ## ⚙️ INTRODUCCIÓN AL MODELO Y ENTORNO
+
+### 📸 Galería del Sistema
+
+| Col 1 | Col 2 | Col 3 | Col 4 |
+| --- | --- | --- | --- |
+| <img src="img/Screenshot_1.png" width="100%"> | <img src="img/Screenshot_2.png" width="100%"> | <img src="img/Screenshot_3.png" width="100%"> | <img src="img/Screenshot_4.png" width="100%"> |
+| <img src="img/Screenshot_5.png" width="100%"> | <img src="img/Screenshot_6.png" width="100%"> | <img src="img/Screenshot_7.png" width="100%"> | <img src="img/Screenshot_8.png" width="100%"> |
+| <img src="img/Screenshot_9.png" width="100%"> | <img src="img/Screenshot_10.png" width="100%"> | <img src="img/Screenshot_11.png" width="100%"> | <img src="img/Screenshot_12.png" width="100%"> |
+| <img src="img/Screenshot_13.png" width="100%"> | <img src="img/Screenshot_14.png" width="100%"> | <img src="img/Screenshot_15.png" width="100%"> | <img src="img/Screenshot_16.png" width="100%"> |
+
+
+---
+---
 
 En el desarrollo de software moderno, construir aplicaciones robustas requiere separar correctamente las responsabilidades. Un teléfono móvil no debería encargarse de tareas intensivas de procesamiento como generar un archivo PDF pesado. Esas tareas deben ser delegadas a un servidor (API).
 

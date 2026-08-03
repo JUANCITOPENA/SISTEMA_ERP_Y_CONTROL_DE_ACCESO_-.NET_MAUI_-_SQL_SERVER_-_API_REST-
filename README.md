@@ -57,13 +57,12 @@ Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM gu
 
 ---
 
-
 ## 📦 Árbol de la solución
 
-```text
+<pre><code>
 CRUD_LOGIN_MAUI/
 │
-├── CRUD_LOGIN_MAUI.Api/               <-- Backend (.NET Core Web API)
+├── CRUD_LOGIN_MAUI.Api/               &lt;-- Backend (.NET Core Web API)
 │   ├── Program.cs
 │   ├── appsettings.json
 │   ├── CRUD_LOGIN_MAUI.Api.http
@@ -74,11 +73,11 @@ CRUD_LOGIN_MAUI/
 │   └── Services/
 │       └── TicketPdfGenerator.cs
 │
-├── CRUD_LOGIN_MAUI/                   <-- Frontend (.NET MAUI)
+├── CRUD_LOGIN_MAUI/                   &lt;-- Frontend (.NET MAUI)
 │   ├── App.xaml / App.xaml.cs
 │   ├── AppShell.xaml / AppShell.xaml.cs
 │   ├── MauiProgram.cs
-│   ├── Models/                        <-- Entidades de Datos
+│   ├── Models/                        &lt;-- Entidades de Datos
 │   │   ├── Categoria.cs
 │   │   ├── Cliente.cs
 │   │   ├── DetalleVenta.cs
@@ -88,28 +87,37 @@ CRUD_LOGIN_MAUI/
 │   │   ├── Usuario.cs
 │   │   ├── Vendedor.cs
 │   │   └── Venta.cs
-│   ├── Services/                      <-- Lógica de Negocio y Conexiones
-│   │   ├── ConfigDB.cs                <-- Centralización de la Cadena de Conexión
+│   ├── Services/                      &lt;-- Lógica de Negocio y Conexiones
+│   │   ├── ConfigDB.cs                &lt;-- Centralización de la Cadena de Conexión
 │   │   ├── VentaService.cs
 │   │   └── TicketPdfService.cs
-│   └── Views/                         <-- Interfaces de Usuario (XAML + CS)
-│       ├── MainPage.xaml / MainPage.xaml.cs          <-- Login
-│       ├── AdminPage.xaml / AdminPage.xaml.cs        <-- Panel de Administrador
-│       ├── AlmacenistaPage.xaml / AlmacenistaPage.xaml.cs  <-- Dashboard de Almacén
-│       ├── InventarioPage.xaml / InventarioPage.xaml.cs    <-- CRUD de Productos
-│       ├── ReportesPage.xaml / ReportesPage.xaml.cs        <-- Reportes Generales
-│       ├── ResumenVentasPage.xaml / ResumenVentasPage.xaml.cs <-- Resumen de Ventas
-│       ├── RolesPage.xaml / RolesPage.xaml.cs              <-- Gestión de Roles
-│       ├── SupervisorPage.xaml / SupervisorPage.xaml.cs    <-- Panel de Supervisor
-│       └── VendedorPage.xaml / VendedorPage.xaml.cs        <-- Panel de Vendedor
+│   └── Views/                         &lt;-- Interfaces de Usuario (XAML + CS)
+│       ├── MainPage.xaml / MainPage.xaml.cs          &lt;-- Login
+│       ├── AdminPage.xaml / AdminPage.xaml.cs        &lt;-- Panel de Administrador
+│       ├── AlmacenistaPage.xaml / AlmacenistaPage.xaml.cs  &lt;-- Dashboard de Almacén
+│       ├── InventarioPage.xaml / InventarioPage.xaml.cs    &lt;-- CRUD de Productos
+│       ├── ReportesPage.xaml / ReportesPage.xaml.cs        &lt;-- Reportes Generales
+│       ├── ResumenVentasPage.xaml / ResumenVentasPage.xaml.cs &lt;-- Resumen de Ventas
+│       ├── RolesPage.xaml / RolesPage.xaml.cs              &lt;-- Gestión de Roles
+│       ├── SupervisorPage.xaml / SupervisorPage.xaml.cs    &lt;-- Panel de Supervisor
+│       └── VendedorPage.xaml / VendedorPage.xaml.cs        &lt;-- Panel de Vendedor
 │
-└── CRUD_LOGIN_MAUI.Tests/             <-- Pruebas (xUnit)
-    ├── IntegracionE2ETests.cs         <-- Pruebas de Integración End-to-End
-    └── VentaServiceTests.cs           <-- Pruebas Unitarias del Servicio de Ventas
-```
+└── CRUD_LOGIN_MAUI.Tests/             &lt;-- Pruebas (xUnit)
+    ├── IntegracionE2ETests.cs         &lt;-- Pruebas de Integración End-to-End
+    └── VentaServiceTests.cs           &lt;-- Pruebas Unitarias del Servicio de Ventas
+</code></pre>
 
 ---
 ---
+
+> [!IMPORTANT]
+> **Corrección de Modelos y Referencias XAML (0 Errores de Compilación):**
+> Se corrigieron una serie de errores de compilación (`CS0050`, `CS0051`, `CS0117`, `XC0000`) estableciendo todos los modelos de la carpeta `Models` como `public class` y agregando explícitamente cada una de sus propiedades correspondientes según la base de datos SQL (ej. `Nombre`, `CategoriaId`, `PorcentajeMargen` como `string`, etc.). Además, se corrigió el archivo `AppShell.xaml` indicando correctamente el namespace de las vistas (`xmlns:views="clr-namespace:CRUD_LOGIN_MAUI.Views"`).
+
+> [!TIP]
+> **Corrección de Librerías PDF:**
+> - El paquete **`itext7`** está descontinuado (deprecated) y fue removido del proyecto MAUI. Se utiliza únicamente **`itext`** (versión actual) para la generación de reportes locales en el dispositivo (Módulo Inventario / Almacén).
+> - El paquete **`QuestPDF`** es de uso **exclusivo para la API** (Backend) donde se generan los tickets de venta, por lo que fue removido del proyecto MAUI para evitar conflictos y advertencias innecesarias de librerías nativas (`libQuestPdfSkia.so`).
 
 ## ⚙️ INTRODUCCIÓN AL MODELO Y ENTORNO
 
@@ -126,7 +134,6 @@ CRUD_LOGIN_MAUI/
 ---
 ---
 
-
 En el desarrollo de software moderno, construir aplicaciones robustas requiere separar correctamente las responsabilidades. Un teléfono móvil no debería encargarse de tareas intensivas de procesamiento como generar un archivo PDF pesado. Esas tareas deben ser delegadas a un servidor (API).
 
 ### 🏗️ ¿Qué tipo de proyecto es este?
@@ -139,7 +146,7 @@ Implementamos una **Arquitectura Limpia en Tres Capas**:
 *   **Motor de Base de Datos:** SQL Server.
 *   **Framework:** .NET 9.0 con C#.
 *   **IDE Recomendado:** Visual Studio 2022.
-*   **Paquetes NuGet (MAUI):** `Microsoft.Data.SqlClient`, `itext7`.
+*   **Paquetes NuGet (MAUI):** `Microsoft.Data.SqlClient`, `itext`.
 *   **Paquetes NuGet (API):** `QuestPDF`.
 
 <br>
@@ -571,7 +578,7 @@ namespace CRUD_LOGIN_MAUI.Api.Services
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
-            var document = Document.Create(container =>
+            var document = QuestPDF.Fluent.Document.Create(container =>
             {
                 container.Page(page =>
                 {
@@ -589,7 +596,7 @@ namespace CRUD_LOGIN_MAUI.Api.Services
             return document.GeneratePdf();
         }
 
-        private void ComposeHeader(IContainer container)
+        private void ComposeHeader(QuestPDF.Infrastructure.IContainer container)
         {
             container.Column(column =>
             {
@@ -600,7 +607,7 @@ namespace CRUD_LOGIN_MAUI.Api.Services
             });
         }
 
-        private void ComposeContent(IContainer container, TicketRequest request)
+        private void ComposeContent(QuestPDF.Infrastructure.IContainer container, TicketRequest request)
         {
             container.Column(column =>
             {
@@ -637,6 +644,11 @@ namespace CRUD_LOGIN_MAUI.Api.Services
 }
 
 ```
+
+> [!NOTE]
+> **Resolución de Referencias Ambiguas:**
+> Hemos especificado explícitamente `QuestPDF.Fluent.Document` y `QuestPDF.Infrastructure.IContainer` en este código para prevenir errores comunes de ambigüedad (`'Document' is an ambiguous reference` y `'IContainer' is an ambiguous reference`). Estos errores ocurren si tu proyecto incluye referencias adicionales como `System.ComponentModel` o `System.Reflection.Metadata`, las cuales contienen interfaces o clases con el mismo nombre.
+> De este modo, evitamos choques de nombres sin importar qué librerías nativas esté usando la API.
 
 ---
 
@@ -886,7 +898,7 @@ namespace CRUD_LOGIN_MAUI.Services
             // Validar dependencias primero
             using var checkCmd = new Microsoft.Data.SqlClient.SqlCommand("SELECT COUNT(*) FROM Detalle_Ventas WHERE ProductoId = @Id", conn);
             checkCmd.Parameters.AddWithValue("@Id", id);
-            int count = (int)await checkCmd.ExecuteScalarAsync();
+            int count = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
             
             if (count > 0)
             {
@@ -900,7 +912,7 @@ namespace CRUD_LOGIN_MAUI.Services
             return (true, "Producto eliminado correctamente.");
         }
 
-        public async Task<List<Venta>> GetReporteVentas(int? clienteId, int? vendedorId, int? productoId){ var list = new List<Venta>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = @"SELECT V.Id, V.Fecha, C.Nombre as ClienteNombre, Vend.Nombre as VendedorNombre, P.Nombre as ProductoNombre, DV.Cantidad, DV.PrecioVentaAplicado as Total FROM Ventas V INNER JOIN Cliente C ON V.ClienteId = C.Id INNER JOIN Vendedor Vend ON V.VendedorId = Vend.Id INNER JOIN Detalle_Ventas DV ON V.Id = DV.VentaId INNER JOIN Producto P ON DV.ProductoId = P.Id WHERE (@CID IS NULL OR V.ClienteId = @CID) AND (@VID IS NULL OR V.VendedorId = @VID) AND (@PID IS NULL OR DV.ProductoId = @PID) ORDER BY V.Fecha DESC"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); cmd.Parameters.AddWithValue("@CID", (object)clienteId ?? DBNull.Value); cmd.Parameters.AddWithValue("@VID", (object)vendedorId ?? DBNull.Value); cmd.Parameters.AddWithValue("@PID", (object)productoId ?? DBNull.Value); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()){ list.Add(new Venta { Id = (int)reader["Id"], Fecha = (DateTime)reader["Fecha"], ClienteNombre = reader["ClienteNombre"].ToString() ?? "", VendedorNombre = reader["VendedorNombre"].ToString() ?? "", ProductoNombre = reader["ProductoNombre"].ToString() ?? "", Cantidad = (int)reader["Cantidad"], Total = (decimal)reader["Total"] * (int)reader["Cantidad"] }); } return list; } 
+        public async Task<List<Venta>> GetReporteVentas(int? clienteId, int? vendedorId, int? productoId){ var list = new List<Venta>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = @"SELECT V.Id, V.Fecha, C.Nombre as ClienteNombre, Vend.Nombre as VendedorNombre, P.Nombre as ProductoNombre, DV.Cantidad, DV.PrecioVentaAplicado as Total FROM Ventas V INNER JOIN Cliente C ON V.ClienteId = C.Id INNER JOIN Vendedor Vend ON V.VendedorId = Vend.Id INNER JOIN Detalle_Ventas DV ON V.Id = DV.VentaId INNER JOIN Producto P ON DV.ProductoId = P.Id WHERE (@CID IS NULL OR V.ClienteId = @CID) AND (@VID IS NULL OR V.VendedorId = @VID) AND (@PID IS NULL OR DV.ProductoId = @PID) ORDER BY V.Fecha DESC"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); cmd.Parameters.AddWithValue("@CID", (object)clienteId ?? DBNull.Value); cmd.Parameters.AddWithValue("@VID", (object)vendedorId ?? DBNull.Value); cmd.Parameters.AddWithValue("@PID", (object)productoId ?? DBNull.Value); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()){ list.Add(new Venta { Id = (int)reader["Id"], Fecha = (DateTime)reader["Fecha"], ClienteNombre = reader["ClienteNombre"]?.ToString() ?? "", VendedorNombre = reader["VendedorNombre"]?.ToString() ?? "", ProductoNombre = reader["ProductoNombre"]?.ToString() ?? "", Cantidad = (int)reader["Cantidad"], Total = (decimal)reader["Total"] * (int)reader["Cantidad"] }); } return list; } 
 
         public async Task<List<ResumenVenta>> GetResumenHistoricoAsync(DateTime fechaInicio, DateTime fechaFin, string agrupacion)
         {
@@ -1326,8 +1338,8 @@ namespace CRUD_LOGIN_MAUI.Views
 
         private async void OnLogin_Clicked(object sender, EventArgs e)
         {
-            string usuario = txtUsuario.Text?.Trim();
-            string password = txtPassword.Text?.Trim();
+            string usuario = txtUsuario.Text?.Trim() ?? "";
+            string password = txtPassword.Text?.Trim() ?? "";
 
             if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(password))
             {
@@ -1358,7 +1370,7 @@ namespace CRUD_LOGIN_MAUI.Views
 
                         if (roleResult != null)
                         {
-                            string role = roleResult.ToString();
+                            string role = roleResult?.ToString() ?? "";
                             // Navegar a la página correspondiente (AdminPage, SupervisorPage o VendedorPage)
                             await Shell.Current.GoToAsync($"{role}Page");
                         }
@@ -1561,7 +1573,7 @@ public partial class AdminPage : ContentPage
             while (await reader.ReadAsync())
             {
                 _rolesIds.Add((int)reader["Id"]);
-                roles.Add(reader["NombreRol"].ToString());
+                roles.Add(reader["NombreRol"].ToString() ?? "");
             }
 
             pickerRol.ItemsSource = roles;
@@ -1659,8 +1671,8 @@ public partial class AdminPage : ContentPage
                 lista.Add(new UsuarioItem
                 {
                     Id = (int)reader["Id"],
-                    Usuario = reader["Usuario"].ToString(),
-                    Rol = reader["NombreRol"].ToString()
+                    Usuario = reader["Usuario"].ToString() ?? "",
+                    Rol = reader["NombreRol"].ToString() ?? ""
                 });
 
             listaUsuarios.ItemsSource = lista;
@@ -1836,7 +1848,7 @@ namespace CRUD_LOGIN_MAUI.Views;
 public class RolItem
 {
     public int Id { get; set; }
-    public string NombreRol { get; set; }
+    public string NombreRol { get; set; } = string.Empty;
 }
 
 public partial class RolesPage : ContentPage
@@ -1919,7 +1931,7 @@ public partial class RolesPage : ContentPage
                 lista.Add(new RolItem
                 {
                     Id = (int)reader["Id"],
-                    NombreRol = reader["NombreRol"].ToString()
+                    NombreRol = reader["NombreRol"].ToString() ?? "" ?? ""
                 });
 
             listaRoles.ItemsSource = lista;
@@ -1982,8 +1994,7 @@ Interfaz para gestionar los productos de la tienda. Incluye campos de costo, pre
             <Entry x:Name="txtNombre" Placeholder="Nombre del Producto" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
 
             <Label Text="CATEGORÍA" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
-            <Picker x:Name="pickerCategoria" Title="-- Seleccione --" ItemDisplayBinding="{Binding Nombre}"
-                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="70" TitleColor="Black" FontAttributes="Bold"/>
+            <Picker x:Name="pickerCategoria" Title="-- Seleccione --" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False"`r`n                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="70" TitleColor="Black" FontAttributes="Bold"/>
             <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
                 <VerticalStackLayout Grid.Column="0">
                     <Label Text="COSTO" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
@@ -2350,7 +2361,7 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
         <!-- DATA LIST (CARDS) -->
         <CollectionView x:Name="listaAlmacen" Grid.Row="2" Margin="0,10,0,0">
             <CollectionView.ItemTemplate>
-                <DataTemplate>
+                <DataTemplate x:CompileBindings="False">
                     <Border StrokeShape="RoundRectangle 10" Stroke="#E0E0E0" BackgroundColor="White" Margin="0,0,0,12" Padding="15">
                         <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
                             
@@ -2605,9 +2616,9 @@ El corazón de la venta. Diseño visual de una caja registradora, con selectores
             <Frame BackgroundColor="White" Padding="15" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
                 <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" ColumnSpacing="15" RowSpacing="15">
                     
-                    <Picker x:Name="pickerCliente" Title="👤 Seleccione Cliente" ItemDisplayBinding="{Binding Nombre}" Grid.Row="0" Grid.Column="0"/>
+                    <Picker x:Name="pickerCliente" Title="👤 Seleccione Cliente" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False" Grid.Row="0" Grid.Column="0"/>
                     
-                    <Picker x:Name="pickerProducto" Title="📦 Seleccione Producto" ItemDisplayBinding="{Binding Nombre}" Grid.Row="0" Grid.Column="1"/>
+                    <Picker x:Name="pickerProducto" Title="📦 Seleccione Producto" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False" Grid.Row="0" Grid.Column="1"/>
                     
                     <Entry x:Name="txtCantidad" Placeholder="Cantidad" Keyboard="Numeric" Grid.Row="1" Grid.Column="0"/>
                     

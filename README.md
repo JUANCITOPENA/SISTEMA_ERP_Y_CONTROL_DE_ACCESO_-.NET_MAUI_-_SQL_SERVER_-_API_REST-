@@ -1,4 +1,4 @@
-﻿# 📘 LA BIBLIA DE INGENIERÍA JPV PRO V3.0
+# 📘 LA BIBLIA DE INGENIERÍA JPV PRO V3.0
 ## SISTEMA ERP Y CONTROL DE ACCESO (.NET MAUI + SQL SERVER + API REST)
 
 ---
@@ -124,8 +124,8 @@ CRUD_LOGIN_MAUI/
 | <img src="img/Screenshot_13.png" width="100%"> | <img src="img/Screenshot_14.png" width="100%"> | <img src="img/Screenshot_15.png" width="100%"> | <img src="img/Screenshot_16.png" width="100%"> |
 
 
-
-
+---
+---
 
 En el desarrollo de software moderno, construir aplicaciones robustas requiere separar correctamente las responsabilidades. Un teléfono móvil no debería encargarse de tareas intensivas de procesamiento como generar un archivo PDF pesado. Esas tareas deben ser delegadas a un servidor (API).
 

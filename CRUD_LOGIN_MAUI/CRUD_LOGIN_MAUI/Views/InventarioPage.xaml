@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CRUD_LOGIN_MAUI.Models"
+             x:Class="CRUD_LOGIN_MAUI.Views.InventarioPage"
+             BackgroundColor="White">
+    <Grid RowDefinitions="Auto, *" Padding="20">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="8" Margin="0,0,0,20">
+            <Label Text="REGISTRO DE PRODUCTOS" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black"/>
+            <Entry x:Name="txtNombre" Placeholder="Nombre del Producto" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+
+            <Label Text="CATEGORÍA" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
+            <Picker x:Name="pickerCategoria" Title="-- Seleccione --" ItemDisplayBinding="{Binding Nombre}"
+                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="70" TitleColor="Black" FontAttributes="Bold"/>
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="COSTO" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
+                    <Entry x:Name="txtPrecioCompra" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1">
+                    <Label Text="VENTA" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
+                    <Entry x:Name="txtPrecioVenta" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+                </VerticalStackLayout>
+            </Grid>
+
+            <Label Text="STOCK" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
+            <Entry x:Name="txtStock" Placeholder="0" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="10" Margin="0,10">
+                <Button Grid.Row="0" Grid.Column="0" Text="GUARDAR" Clicked="OnGuardar" BackgroundColor="Green" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="0" Grid.Column="1" Text="LIMPIAR" Clicked="OnLimpiar" BackgroundColor="Gray" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="1" Grid.Column="0" Text="ELIMINAR" Clicked="OnEliminar" BackgroundColor="Red" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="1" Grid.Column="1" Text="GENERAR PDF" Clicked="OnGenerarPDF" BackgroundColor="DarkBlue" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+            </Grid>
+        </VerticalStackLayout>
+        
+        <Grid Grid.Row="1" RowDefinitions="Auto, *">
+            <!-- SearchBar para filtros dinámicos -->
+            <SearchBar x:Name="searchBar" Grid.Row="0" Placeholder="Buscar producto por nombre o categoría..." 
+                       TextChanged="OnSearchTextChanged" BackgroundColor="#F0F0F0" TextColor="Black" CancelButtonColor="Red" Margin="0,0,0,10" />
+
+            <CollectionView Grid.Row="1" x:Name="ListaProductos" SelectionMode="Single" SelectionChanged="OnSelectionChanged">
+                <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Producto">
+                    <Frame Margin="0,5" Padding="20" BorderColor="Black" BackgroundColor="White" HasShadow="True" CornerRadius="10" InputTransparent="True">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="17" TextColor="Black"/>
+                                <Label Text="{Binding CategoriaNombre, StringFormat='Categoría: {0}'}" FontSize="13" FontAttributes="Bold" TextColor="#333333"/>
+                                <Label Text="{Binding Stock, StringFormat='Existencia: {0}'}" TextColor="#0056B3" FontAttributes="Bold" FontSize="14"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                <Label Text="{Binding PrecioVenta, StringFormat='{0:C}'}" FontAttributes="Bold" TextColor="DarkGreen" FontSize="18" HorizontalOptions="End"/>
+                                <Label Text="{Binding PrecioCompra, StringFormat='Costo: {0:C}'}" FontSize="11" FontAttributes="Bold" TextColor="DarkRed" HorizontalOptions="End"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

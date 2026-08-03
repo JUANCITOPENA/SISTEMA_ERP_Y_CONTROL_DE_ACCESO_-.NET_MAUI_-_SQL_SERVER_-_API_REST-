@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CRUD_LOGIN_MAUI.Models"
+             x:Class="CRUD_LOGIN_MAUI.Views.ResumenVentasPage"
+             Title="Dashboard Financiero"
+             BackgroundColor="#f8fafc">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="20">
+        
+        <!-- Controles de Filtro -->
+        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,15">
+            <Label Text="📊 RESUMEN HISTÓRICO DE VENTAS" FontSize="22" FontAttributes="Bold" TextColor="#1e293b"/>
+
+            <Frame BackgroundColor="White" Padding="15" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
+                <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto" ColumnSpacing="15" RowSpacing="15">
+                    
+                    <!-- Rangos Rápidos -->
+                    <Label Text="Rango Rápido:" Grid.Row="0" Grid.Column="0" VerticalOptions="Center" FontAttributes="Bold"/>
+                    <Picker x:Name="pickerRangoRapido" Grid.Row="0" Grid.Column="1" Title="Seleccione rango" SelectedIndexChanged="OnRangoRapidoChanged">
+                        <Picker.Items>
+                            <x:String>Hoy</x:String>
+                            <x:String>Esta Semana</x:String>
+                            <x:String>Este Mes</x:String>
+                            <x:String>Este Año</x:String>
+                            <x:String>Personalizado</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <!-- Fechas -->
+                    <DatePicker x:Name="dpInicio" Grid.Row="1" Grid.Column="0" Format="dd/MM/yyyy"/>
+                    <DatePicker x:Name="dpFin" Grid.Row="1" Grid.Column="1" Format="dd/MM/yyyy"/>
+
+                    <!-- Agrupación y Botón -->
+                    <Picker x:Name="pickerAgrupacion" Grid.Row="2" Grid.Column="0" Title="Agrupar por">
+                        <Picker.Items>
+                            <x:String>General</x:String>
+                            <x:String>Vendedor</x:String>
+                            <x:String>Cliente</x:String>
+                            <x:String>Producto</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <Button Text="🔍 GENERAR RESUMEN" Grid.Row="2" Grid.Column="1" BackgroundColor="#10b981" TextColor="White" FontAttributes="Bold" Clicked="OnGenerarClicked"/>
+                </Grid>
+            </Frame>
+        </VerticalStackLayout>
+
+        <!-- Lista de Resumen -->
+        <CollectionView x:Name="listaResumen" Grid.Row="1">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:ResumenVenta">
+                    <Frame BackgroundColor="White" Padding="15" Margin="0,5" CornerRadius="10" HasShadow="True" BorderColor="#e2e8f0">
+                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, *">
+                            <Label Text="{Binding Agrupador}" FontAttributes="Bold" FontSize="18" TextColor="#334155" Grid.Row="0" Grid.ColumnSpan="2"/>
+                            
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="5" Margin="0,10,0,0">
+                                <Label Text="{Binding CantidadVentas, StringFormat='Ventas: {0}'}" FontSize="14" TextColor="#64748b"/>
+                                <Label Text="{Binding TotalArticulos, StringFormat='Artículos: {0}'}" FontSize="14" TextColor="#64748b"/>
+                                <Label Text="{Binding Costos, StringFormat='Costos: {0:C}'}" FontSize="14" TextColor="#ef4444" FontAttributes="Bold"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="5" Margin="0,10,0,0" HorizontalOptions="End">
+                                <Label Text="{Binding Ingresos, StringFormat='Ingresos: {0:C}'}" FontSize="16" TextColor="#10b981" FontAttributes="Bold"/>
+                                <Label Text="{Binding Margen, StringFormat='Margen: {0:C}'}" FontSize="14" TextColor="#3b82f6" FontAttributes="Bold"/>
+                                <Label Text="{Binding PorcentajeMargen, StringFormat='% Margen: {0}'}" FontSize="14" TextColor="#f59e0b" FontAttributes="Bold"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Totales Finales -->
+        <Frame Grid.Row="2" BackgroundColor="#1e293b" Padding="15" CornerRadius="10" Margin="0,15,0,0">
+            <Grid ColumnDefinitions="*, *, *">
+                <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                    <Label Text="INGRESOS" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalIngresos" Text="$0.00" TextColor="#10b981" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+                
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label Text="COSTOS" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalCostos" Text="$0.00" TextColor="#ef4444" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+                
+                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label Text="MARGEN" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalMargen" Text="$0.00" TextColor="#3b82f6" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Frame>
+    </Grid>
+</ContentPage>

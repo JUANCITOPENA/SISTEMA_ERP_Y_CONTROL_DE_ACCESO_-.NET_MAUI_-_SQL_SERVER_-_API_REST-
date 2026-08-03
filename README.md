@@ -57,6 +57,7 @@ Nuestra solución utiliza una arquitectura limpia separada en capas (MVC/MVVM gu
 
 ---
 
+
 ## 📦 Árbol de la solución
 
 ```text

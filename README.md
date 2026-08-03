@@ -2292,6 +2292,532 @@ namespace CRUD_LOGIN_MAUI.Views
 ---
 ---
 
+### 📊 Módulo 6: Reportes y Dashboard de Ventas
+
+Este módulo provee analíticas cruciales para la toma de decisiones, divididas en una vista de **Reportes Detallados** (con exportación a PDF local) y un **Dashboard Financiero** (Resumen Histórico de Ingresos, Costos y Margen).
+
+#### 📁 Archivo 1: La Interfaz Gráfica -> `ReportesPage.xaml` (Filtros Avanzados y Exportación)
+
+**¿De qué se trata?**  
+Una pantalla con un buscador en tiempo real, múltiples selectores (Vendedor, Cliente, Producto) y la capacidad de generar un archivo PDF profesional utilizando `iText`.
+
+**Pasos para crearlo desde cero:**
+1. Ve al **Explorador de Soluciones**, haz clic derecho en `Views` > **Agregar > Nuevo elemento...**.
+2. Elige **.NET MAUI ContentPage (XAML)**, llámalo `ReportesPage.xaml`.
+3. Pega este código:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CRUD_LOGIN_MAUI.Models"
+             x:Class="CRUD_LOGIN_MAUI.Views.ReportesPage"
+             BackgroundColor="White">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="20">
+
+        <!-- Filtros y Buscador -->
+        <VerticalStackLayout Grid.Row="0" Spacing="8" Margin="0,0,0,10">
+            <Label Text="REPORTES Y FILTROS" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black"/>
+
+            <SearchBar x:Name="searchBar" Placeholder="Buscar por texto..." 
+                       TextChanged="OnSearchTextChanged" BackgroundColor="#F0F0F0" TextColor="Black" FontAttributes="Bold"/>
+
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="10">
+                <Picker Grid.Column="0" x:Name="pickerVendedor" Title="Vendedor" ItemDisplayBinding="{Binding Nombre}" 
+                        BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="60" FontAttributes="Bold"/>
+                <Picker Grid.Column="1" x:Name="pickerCliente" Title="Cliente" ItemDisplayBinding="{Binding Nombre}" 
+                        BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="60" FontAttributes="Bold"/>
+            </Grid>
+
+            <Picker x:Name="pickerProducto" Title="Producto" ItemDisplayBinding="{Binding Nombre}" 
+                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="60" FontAttributes="Bold"/>
+
+            <HorizontalStackLayout Spacing="15" HorizontalOptions="Center" Margin="0,5">
+                <Button Text="FILTRAR" Clicked="OnFiltrar" BackgroundColor="DarkSlateBlue" TextColor="White" WidthRequest="130" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Text="LIMPIAR" Clicked="OnLimpiar" BackgroundColor="Gray" TextColor="White" WidthRequest="130" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Text="GENERAR PDF" 
+                        Clicked="OnGenerarPDF" 
+                        BackgroundColor="DarkGreen" 
+                        TextColor="White" 
+                        WidthRequest="130" 
+                        FontAttributes="Bold" 
+                        CornerRadius="8"/>
+
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+        <!-- Lista -->
+        <CollectionView Grid.Row="1" x:Name="ListaVentas" SelectionMode="Single" SelectionChanged="OnSelectionChanged">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Venta">
+                    <Frame Margin="0,2" Padding="15" BorderColor="Black" BackgroundColor="White" HasShadow="True" CornerRadius="8">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{Binding Fecha, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontSize="10" FontAttributes="Bold" TextColor="Black"/>
+                                <Label Text="{Binding ClienteNombre}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
+                                <Label Text="{Binding ProductoNombre}" FontSize="14" FontAttributes="Bold" TextColor="#333333"/>
+                                <Label Text="{Binding VendedorNombre, StringFormat='Vendedor: {0}'}" FontSize="12" FontAttributes="Bold" TextColor="#555555"/>
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="{Binding Total, StringFormat='{0:C}'}" FontAttributes="Bold" TextColor="DarkGreen" FontSize="18" VerticalOptions="Center"/>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- RESUMEN TOTAL -->
+        <Frame Grid.Row="2" BackgroundColor="#F0F0F0" BorderColor="Black" Padding="15" Margin="0,10,0,0">
+            <HorizontalStackLayout HorizontalOptions="End" Spacing="20">
+                <Label Text="TOTAL GENERAL:" FontSize="18" FontAttributes="Bold" TextColor="Black" VerticalOptions="Center"/>
+                <Label x:Name="lblTotalGeneral" Text="$0.00" FontSize="22" FontAttributes="Bold" TextColor="DarkGreen" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+        </Frame>
+    </Grid>
+</ContentPage>
+```
+
+#### 📁 Archivo 2: El Code-Behind (Lógica) -> `ReportesPage.xaml.cs`
+
+**¿De qué se trata?**  
+Controla la recarga de los filtros (Drop-downs), gestiona las consultas a la base de datos a través del `VentaService` y se encarga de dibujar paso a paso el reporte PDF de manera local en el teléfono/PC.
+
+**Pasos para crearlo:**
+1. Despliega `ReportesPage.xaml` y abre `ReportesPage.xaml.cs`.
+2. Pega este código:
+
+```csharp
+﻿using CRUD_LOGIN_MAUI.Models;        // Modelos del CRUD
+using CRUD_LOGIN_MAUI.Services;      // Servicios de acceso a datos
+using System.Collections.ObjectModel; // Listas dinámicas para la UI
+//using QuestPDF.Fluent;                // Construcción fluida de PDFs
+//using QuestPDF.Helpers;               // Colores y utilidades visuales
+//using QuestPDF.Infrastructure;        // Interfaces base de QuestPDF
+using System.IO;                      // Manejo de archivos y streams
+
+
+namespace CRUD_LOGIN_MAUI.Views
+{
+    /// <summary>
+    /// Página de reportes con filtros avanzados y generación de PDF profesional.
+    /// </summary>
+    public partial class ReportesPage : ContentPage
+    {
+        VentaService service = new VentaService();                     // Servicio para manejar ventas (BD)
+        List<Venta> listaBase = new List<Venta>();                     // Lista original con todas las ventas
+        ObservableCollection<Venta> listaMostrada = new ObservableCollection<Venta>(); // Lista que se muestra en la UI
+
+        public ReportesPage()
+        {
+            InitializeComponent();
+            // Asigna la colección observable al CollectionView para actualizaciones en tiempo real
+            ListaVentas.ItemsSource = listaMostrada;
+        }
+
+        /// <summary>
+        /// Se ejecuta al mostrar la página. Carga catálogos y datos iniciales.
+        /// </summary>
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            CargarFiltros();
+            OnFiltrar(null, null);
+        }
+
+        /// <summary>
+        /// Carga los listados de Vendedores, Clientes y Productos en los Pickers.
+        /// </summary>
+        private async void CargarFiltros()
+        {
+            try
+            {
+                pickerVendedor.ItemsSource = await service.GetVendedoresAsync();   // Carga lista de vendedores
+                pickerCliente.ItemsSource = await service.GetClientesAsync();       // Carga lista de clientes
+                pickerProducto.ItemsSource = await service.GetProductosAsync();     // Carga lista de productos
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Ejecuta la consulta filtrada a la base de datos según los Pickers seleccionados.
+        /// </summary>
+        private async void OnFiltrar(object? sender, EventArgs? e)
+        {
+            try
+            {
+                int? cId = (pickerCliente.SelectedItem as Cliente)?.Id;      // Id del cliente seleccionado
+                int? vId = (pickerVendedor.SelectedItem as Vendedor)?.Id;    // Id del vendedor seleccionado
+                int? pId = (pickerProducto.SelectedItem as Producto)?.Id;    // Id del producto seleccionado
+
+                listaBase = await service.GetReporteVentas(cId, vId, pId);   // Consulta filtrada a la BD
+                AplicarBusquedaYResumen(searchBar.Text);                     // Aplica búsqueda y actualiza resumen
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", ex.Message, "OK");
+            }
+        }
+
+        /// <summary>
+        /// Filtra la lista mostrada mientras el usuario escribe en el SearchBar.
+        /// </summary>
+        private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+        {
+            AplicarBusquedaYResumen(e.NewTextValue);
+        }
+
+        /// <summary>
+        /// Aplica filtro de texto y calcula el total general de las ventas visibles.
+        /// </summary>
+        /// <summary>
+        /// Aplica un filtro de búsqueda sobre la lista ya filtrada por los Pickers,
+        /// actualiza la lista mostrada en pantalla y recalcula el total general.
+        /// Este método combina: búsqueda por texto, refresco visual y resumen monetario.
+        /// </summary>
+        private void AplicarBusquedaYResumen(string? texto)
+        {
+            var filtrado = string.IsNullOrWhiteSpace(texto) ? listaBase :
+                listaBase.Where(v => v.ClienteNombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                                     v.ProductoNombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                                     v.VendedorNombre.Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            listaMostrada.Clear();
+            decimal total = 0;
+
+            foreach (var v in filtrado)
+            {
+                listaMostrada.Add(v);
+                total += v.Total;
+            }
+
+            lblTotalGeneral.Text = total.ToString("C");
+        }
+
+
+        /// <summary>
+        /// Al seleccionar una venta en la lista, sincroniza los Pickers con los datos seleccionados.
+        /// </summary>
+        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var venta = e.CurrentSelection.FirstOrDefault() as Venta;                 // Obtiene la venta seleccionada
+            if (venta != null)
+            {
+                if (pickerVendedor.ItemsSource is List<Vendedor> vends)               // Verifica lista de vendedores cargada
+                    pickerVendedor.SelectedItem = vends.FirstOrDefault(x => x.Nombre == venta.VendedorNombre); // Selecciona vendedor correspondiente
+
+                if (pickerCliente.ItemsSource is List<Cliente> clis)                  // Verifica lista de clientes cargada
+                    pickerCliente.SelectedItem = clis.FirstOrDefault(x => x.Nombre == venta.ClienteNombre);    // Selecciona cliente correspondiente
+
+                if (pickerProducto.ItemsSource is List<Producto> prods)               // Verifica lista de productos cargada
+                    pickerProducto.SelectedItem = prods.FirstOrDefault(x => x.Nombre == venta.ProductoNombre); // Selecciona producto correspondiente
+            }
+        }
+
+
+        /// <summary>
+        /// Reinicia todos los filtros y recarga los datos sin restricciones.
+        /// </summary>
+        private void OnLimpiar(object sender, EventArgs e)
+        {
+            searchBar.Text = "";
+            pickerCliente.SelectedIndex = pickerVendedor.SelectedIndex = pickerProducto.SelectedIndex = -1;
+            OnFiltrar(null, null);
+        }
+
+        // ====================== GENERACIÓN DE PDF ======================
+
+        /// <summary>
+        /// Genera y abre un archivo PDF del reporte actual usando QuestPDF.
+        /// Incluye filtros aplicados, tabla detallada y total general.
+        /// </summary>
+        private async void OnGenerarPDF(object sender, EventArgs e)
+        {
+            if (listaMostrada.Count == 0)                                           // Verifica si hay datos para generar PDF
+            {
+                await DisplayAlert("Sin datos", "No hay ventas para generar el reporte.", "OK"); // Alerta si no hay ventas
+                return;                                                             // Sale del método
+            }
+
+            try
+            {
+                string fileName = $"Reporte_Ventas_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"; // Nombre del archivo PDF
+                string filePath = System.IO.Path.Combine(Microsoft.Maui.Storage.FileSystem.CacheDirectory, fileName);    // Ruta donde se guardará el PDF
+
+                using (var writer = new iText.Kernel.Pdf.PdfWriter(filePath))
+                {
+                    using (var pdf = new iText.Kernel.Pdf.PdfDocument(writer))
+                    {
+                        var document = new iText.Layout.Document(pdf, iText.Kernel.Geom.PageSize.A4);
+                        document.SetMargins(30, 30, 30, 30);
+
+                        document.Add(new iText.Layout.Element.Paragraph("SUPERMARKET JPV")
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetFontSize(16));
+                        document.Add(new iText.Layout.Element.Paragraph("REPORTE DE VENTAS")
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetFontSize(14));
+                        document.Add(new iText.Layout.Element.Paragraph($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}")
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
+                        document.Add(new iText.Layout.Element.Paragraph("--------------------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
+
+                        document.Add(new iText.Layout.Element.Paragraph("FILTROS APLICADOS:").SetFontSize(11));
+                        document.Add(new iText.Layout.Element.Paragraph($"Cliente : {(pickerCliente.SelectedItem as Cliente)?.Nombre ?? "Todos"}").SetFontSize(10));
+                        document.Add(new iText.Layout.Element.Paragraph($"Vendedor: {(pickerVendedor.SelectedItem as Vendedor)?.Nombre ?? "Todos"}").SetFontSize(10));
+                        document.Add(new iText.Layout.Element.Paragraph($"Producto: {(pickerProducto.SelectedItem as Producto)?.Nombre ?? "Todos"}").SetFontSize(10));
+                        document.Add(new iText.Layout.Element.Paragraph("--------------------------------------------------"));
+
+                        iText.Layout.Element.Table table = new iText.Layout.Element.Table(iText.Layout.Properties.UnitValue.CreatePercentArray(new float[] { 15, 25, 25, 15, 10, 10 })).UseAllAvailableWidth();
+
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("FECHA").SetFontSize(10)));
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("CLIENTE").SetFontSize(10)));
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("PRODUCTO").SetFontSize(10)));
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("VENDEDOR").SetFontSize(10)));
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("CANT").SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
+                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("TOTAL").SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
+
+                        foreach (var venta in listaMostrada)
+                        {
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.Fecha.ToString("dd/MM/yy")).SetFontSize(10)));
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.ClienteNombre).SetFontSize(10)));
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.ProductoNombre).SetFontSize(10)));
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.VendedorNombre).SetFontSize(10)));
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.Cantidad.ToString()).SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
+                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(venta.Total.ToString("C")).SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
+                        }
+
+                        document.Add(table);
+
+                        document.Add(new iText.Layout.Element.Paragraph($"\nTOTAL GENERAL: {listaMostrada.Sum(v => v.Total):C}")
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT).SetFontSize(14));
+                    }
+                }
+
+                // Abre el PDF generado en el visor predeterminado
+                await Launcher.Default.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(filePath),                              // Archivo a abrir
+                    Title = "Reporte de Ventas"                                     // Título del visor
+                });
+
+                await DisplayAlert("✅ Éxito", "Reporte PDF generado y abierto correctamente.", "OK"); // Mensaje de éxito
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("❌ Error", $"No se pudo generar el PDF:\n{ex.Message}", "OK"); // Manejo de errores
+            }
+        }
+
+
+
+    }
+}
+```
+
+<br>
+
+#### 📁 Archivo 3: La Interfaz Gráfica -> `ResumenVentasPage.xaml` (Dashboard Financiero)
+
+**¿De qué se trata?**  
+Pantalla táctica con filtros de fechas rápidos (Hoy, Esta Semana, Este Mes) que agrupa las ventas (Por Vendedor, Producto o General) y calcula automáticamente los costos, ingresos y márgenes de ganancia.
+
+**Pasos para crearlo:**
+1. En `Views`, agrega un nuevo **.NET MAUI ContentPage (XAML)** llamado `ResumenVentasPage.xaml`.
+2. Pega este código:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CRUD_LOGIN_MAUI.Models"
+             x:Class="CRUD_LOGIN_MAUI.Views.ResumenVentasPage"
+             Title="Dashboard Financiero"
+             BackgroundColor="#f8fafc">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="20">
+
+        <!-- Controles de Filtro -->
+        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,15">
+            <Label Text="📊 RESUMEN HISTÓRICO DE VENTAS" FontSize="22" FontAttributes="Bold" TextColor="#1e293b"/>
+
+            <Frame BackgroundColor="White" Padding="15" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
+                <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto" ColumnSpacing="15" RowSpacing="15">
+
+                    <!-- Rangos Rápidos -->
+                    <Label Text="Rango Rápido:" Grid.Row="0" Grid.Column="0" VerticalOptions="Center" FontAttributes="Bold"/>
+                    <Picker x:Name="pickerRangoRapido" Grid.Row="0" Grid.Column="1" Title="Seleccione rango" SelectedIndexChanged="OnRangoRapidoChanged">
+                        <Picker.Items>
+                            <x:String>Hoy</x:String>
+                            <x:String>Esta Semana</x:String>
+                            <x:String>Este Mes</x:String>
+                            <x:String>Este Año</x:String>
+                            <x:String>Personalizado</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <!-- Fechas -->
+                    <DatePicker x:Name="dpInicio" Grid.Row="1" Grid.Column="0" Format="dd/MM/yyyy"/>
+                    <DatePicker x:Name="dpFin" Grid.Row="1" Grid.Column="1" Format="dd/MM/yyyy"/>
+
+                    <!-- Agrupación y Botón -->
+                    <Picker x:Name="pickerAgrupacion" Grid.Row="2" Grid.Column="0" Title="Agrupar por">
+                        <Picker.Items>
+                            <x:String>General</x:String>
+                            <x:String>Vendedor</x:String>
+                            <x:String>Cliente</x:String>
+                            <x:String>Producto</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <Button Text="🔍 GENERAR RESUMEN" Grid.Row="2" Grid.Column="1" BackgroundColor="#10b981" TextColor="White" FontAttributes="Bold" Clicked="OnGenerarClicked"/>
+                </Grid>
+            </Frame>
+        </VerticalStackLayout>
+
+        <!-- Lista de Resumen -->
+        <CollectionView x:Name="listaResumen" Grid.Row="1">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:ResumenVenta">
+                    <Frame BackgroundColor="White" Padding="15" Margin="0,5" CornerRadius="10" HasShadow="True" BorderColor="#e2e8f0">
+                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, *">
+                            <Label Text="{Binding Agrupador}" FontAttributes="Bold" FontSize="18" TextColor="#334155" Grid.Row="0" Grid.ColumnSpan="2"/>
+
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="5" Margin="0,10,0,0">
+                                <Label Text="{Binding CantidadVentas, StringFormat='Ventas: {0}'}" FontSize="14" TextColor="#64748b"/>
+                                <Label Text="{Binding TotalArticulos, StringFormat='Artículos: {0}'}" FontSize="14" TextColor="#64748b"/>
+                                <Label Text="{Binding Costos, StringFormat='Costos: {0:C}'}" FontSize="14" TextColor="#ef4444" FontAttributes="Bold"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="5" Margin="0,10,0,0" HorizontalOptions="End">
+                                <Label Text="{Binding Ingresos, StringFormat='Ingresos: {0:C}'}" FontSize="16" TextColor="#10b981" FontAttributes="Bold"/>
+                                <Label Text="{Binding Margen, StringFormat='Margen: {0:C}'}" FontSize="14" TextColor="#3b82f6" FontAttributes="Bold"/>
+                                <Label Text="{Binding PorcentajeMargen, StringFormat='% Margen: {0}'}" FontSize="14" TextColor="#f59e0b" FontAttributes="Bold"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Totales Finales -->
+        <Frame Grid.Row="2" BackgroundColor="#1e293b" Padding="15" CornerRadius="10" Margin="0,15,0,0">
+            <Grid ColumnDefinitions="*, *, *">
+                <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                    <Label Text="INGRESOS" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalIngresos" Text="$0.00" TextColor="#10b981" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label Text="COSTOS" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalCostos" Text="$0.00" TextColor="#ef4444" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label Text="MARGEN" TextColor="#94a3b8" FontSize="12"/>
+                    <Label x:Name="lblTotalMargen" Text="$0.00" TextColor="#3b82f6" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Frame>
+    </Grid>
+</ContentPage>
+```
+
+#### 📁 Archivo 4: El Code-Behind (Lógica) -> `ResumenVentasPage.xaml.cs`
+
+**¿De qué se trata?**  
+Captura las fechas del usuario, se comunica con el servicio para traer el histórico financiero y efectúa los cálculos matemáticos finales (Sumatorias) que alimentan la interfaz gráfica.
+
+**Pasos para crearlo:**
+1. Abre `ResumenVentasPage.xaml.cs`.
+2. Pega este código:
+
+```csharp
+using CRUD_LOGIN_MAUI.Models;
+using CRUD_LOGIN_MAUI.Services;
+using iText.Kernel.Pdf.Action;
+using Microsoft.Maui.Controls;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace CRUD_LOGIN_MAUI.Views
+{
+    public partial class ResumenVentasPage : ContentPage
+    {
+        private VentaService _ventaService = new VentaService();
+
+        public ResumenVentasPage()
+        {
+            InitializeComponent();
+            pickerAgrupacion.SelectedIndex = 0; // Por defecto "General"
+            pickerRangoRapido.SelectedIndex = 2; // Por defecto "Este Mes"
+        }
+
+        private void OnRangoRapidoChanged(object sender, EventArgs e)
+        {
+            DateTime hoy = DateTime.Today;
+
+            switch (pickerRangoRapido.SelectedItem?.ToString())
+            {
+                case "Hoy":
+                    dpInicio.Date = hoy;
+                    dpFin.Date = hoy;
+                    break;
+                case "Esta Semana":
+                    int diff = (7 + (hoy.DayOfWeek - DayOfWeek.Monday)) % 7;
+                    dpInicio.Date = hoy.AddDays(-1 * diff).Date;
+                    dpFin.Date = dpInicio.Date.AddDays(6);
+                    break;
+                case "Este Mes":
+                    dpInicio.Date = new DateTime(hoy.Year, hoy.Month, 1);
+                    dpFin.Date = dpInicio.Date.AddMonths(1).AddDays(-1);
+                    break;
+                case "Este Año":
+                    dpInicio.Date = new DateTime(hoy.Year, 1, 1);
+                    dpFin.Date = new DateTime(hoy.Year, 12, 31);
+                    break;
+            }
+        }
+
+        private async void OnGenerarClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                string agrupacion = pickerAgrupacion.SelectedItem?.ToString() ?? "General";
+
+                var resumen = await _ventaService.GetResumenHistoricoAsync(dpInicio.Date, dpFin.Date, agrupacion);
+
+                listaResumen.ItemsSource = resumen;
+
+                // Calcular totales generales
+                decimal totIngresos = resumen.Sum(r => r.Ingresos);
+                decimal totCostos = resumen.Sum(r => r.Costos);
+                decimal totMargen = resumen.Sum(r => r.Margen);
+
+                lblTotalIngresos.Text = totIngresos.ToString("C");
+                lblTotalCostos.Text = totCostos.ToString("C");
+                lblTotalMargen.Text = totMargen.ToString("C");
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"No se pudo generar el resumen: {ex.Message}", "OK");
+            }
+        }
+    }
+}
+```
+
+<br>
+<br>
+
+---
+---
+
 #### 📄 Archivo 1: La Interfaz Gráfica -> `AlmacenistaPage.xaml` (Dashboard de Rotación)
 
 **¿De qué se trata?**  

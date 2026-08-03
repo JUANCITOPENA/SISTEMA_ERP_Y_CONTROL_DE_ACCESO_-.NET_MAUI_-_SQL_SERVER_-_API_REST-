@@ -3005,3 +3005,61 @@ namespace CRUD_LOGIN_MAUI.Views
 
 ---
 *Fin de la Biblia de Ingeniería JPV Pro V3.0. Todo el conocimiento técnico, arquitectónico y práctico en un solo lugar. Diseñado para enseñar a dominar .NET MAUI y C# en entornos empresariales reales.*
+
+
+---
+
+## 🧪 INTRODUCCIÓN A TESTING (Ejemplo Didáctico con Moq y xUnit)
+
+¿Para qué sirve el Testing? Imagina que cambias una línea de código en tu base de datos y, sin darte cuenta, rompes el módulo de ventas. Si tienes cientos de pantallas, probarlas una a una manualmente (haciendo clics) tomaría horas. 
+El **Testing (Pruebas Unitarias)** permite escribir código que prueba tu propio código en milisegundos. 
+
+Para demostrar cómo funciona de manera aislada (Mocking Básico), hemos creado el proyecto CRUD_LOGIN_MAUI.Tests. En este ejemplo, utilizamos **Moq** para simular la base de datos o el comportamiento de la interfaz, lo cual nos permite verificar si la lógica responde correctamente bajo diferentes escenarios (Ej: enviar un carrito vacío vs un carrito con productos).
+
+### 📄 Ejemplo Práctico: VentaServiceTests.cs
+Aquí puedes ver la anatomía de una prueba unitaria (AAA: Arrange, Act, Assert):
+
+`csharp
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Moq;
+using Xunit;
+
+namespace CRUD_LOGIN_MAUI.Tests
+{
+    // Simulamos los Modelos para propósitos didácticos
+    public class VentaFake { public int Id { get; set; } }
+    
+    // Interfaz que simula lo que hace VentaService sin tocar la BD real
+    public interface IVentaService
+    {
+        Task<(bool IsSuccess, string Message)> ProcesarVentaAsync(List<VentaFake> carrito);
+    }
+
+    public class VentaServiceTests
+    {
+        [Fact]
+        public async Task ProcesarVenta_DebeRetornarFalso_SiCarritoEstaVacio()
+        {
+            // 1. ARRANGE (Preparar el escenario)
+            var mockService = new Mock<IVentaService>();
+            mockService.Setup(s => s.ProcesarVentaAsync(It.Is<List<VentaFake>>(c => c.Count == 0)))
+                       .ReturnsAsync((false, "El carrito no puede estar vacío"));
+
+            var carritoVacio = new List<VentaFake>();
+
+            // 2. ACT (Actuar / Ejecutar la acción)
+            var resultado = await mockService.Object.ProcesarVentaAsync(carritoVacio);
+
+            // 3. ASSERT (Afirmar que el resultado es el esperado)
+            Assert.False(resultado.IsSuccess);
+            Assert.Equal("El carrito no puede estar vacío", resultado.Message);
+        }
+    }
+}
+`
+
+**Para correr estas pruebas didácticas localmente:**
+1. Abre tu terminal en la ruta principal.
+2. Ingresa a la carpeta: cd CRUD_LOGIN_MAUI.Tests
+3. Ejecuta el comando mágico: dotnet test

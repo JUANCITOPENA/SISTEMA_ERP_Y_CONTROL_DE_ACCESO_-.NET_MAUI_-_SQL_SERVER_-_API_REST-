@@ -723,7 +723,6 @@ Es el Frontend con el que el usuario interactúa. Su trabajo es mostrar datos vi
         Route="MainPage" />
 </Shell>
 
-
 ```
 
 <br>
@@ -751,7 +750,7 @@ namespace CRUD_LOGIN_MAUI
         public AppShell()
         {
             InitializeComponent();
-
+            
             Routing.RegisterRoute("AdminPage", typeof(AdminPage));
             Routing.RegisterRoute("SupervisorPage", typeof(SupervisorPage));
             Routing.RegisterRoute("VendedorPage", typeof(VendedorPage));
@@ -764,7 +763,6 @@ namespace CRUD_LOGIN_MAUI
     }
 }
 
-
 ```
 
 <br><br>
@@ -772,10 +770,186 @@ namespace CRUD_LOGIN_MAUI
 ---
 ---
 
-### ⚙️ MÓDULO 2: CAPA DE SERVICIOS Y CONEXIONES A BD
+### ⚙️ MÓDULO 1.5: LOS MODELOS DE DATOS
 
-#### 📁 Carpeta: `Services/`
-**Pasos previos:** Clic derecho en el proyecto MAUI > **Agregar** > **Nueva Carpeta**, nómbrala `Services`.
+En la arquitectura **MVVM (Model-View-ViewModel)**, los **Modelos (Models)** representan el bloque fundamental de información de nuestra aplicación. Son clases puras de C# que abstraen los datos del mundo real (como un Cliente, un Producto o una Venta) para que la aplicación pueda manipularlos, mostrarlos y enviarlos.
+
+**¿Por qué es vital que coincidan con la base de datos SQL?**
+Porque los Modelos actúan como el "espejo" directo de nuestras tablas en la base de datos. Cada propiedad en la clase C# debe mapear correctamente al tipo de dato (y en muchos casos, al nombre) de la columna en SQL Server. Si hay discrepancias, al intentar leer o escribir datos usando `SqlDataReader`, el programa colapsará (lanzando excepciones de tipo o columna no encontrada). Asegurar esta simetría garantiza un flujo de datos limpio, seguro y predecible a través de todas las capas del ERP.
+
+A continuación, crearemos cada uno de estos Modelos dentro de la carpeta `Models/` del proyecto MAUI. Es vital que estas clases sean marcadas como `public class` para que la UI (XAML) y los Servicios puedan acceder a sus propiedades libremente.
+
+#### `Categoria.cs`
+**Uso en el ERP:** Esta clase sirve para clasificar los productos del inventario (ej. "Electrónica", "Hogar"). Permite agrupar y filtrar productos fácilmente en el sistema de ventas y en los reportes de almacén.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Categoria
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+    }
+}
+```
+
+#### `Cliente.cs`
+**Uso en el ERP:** Representa a los compradores o entidades a quienes se les emiten las facturas. Contiene datos vitales para la facturación comprobada, como el Registro Nacional del Contribuyente (RNC) y el teléfono de contacto para el seguimiento de ventas.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Cliente
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+        public string RNC { get; set; }
+        public string Telefono { get; set; }
+    }
+}
+```
+
+#### `DetalleVenta.cs`
+**Uso en el ERP:** Modela cada una de las líneas individuales de una factura (los productos que se están comprando en una transacción específica). Almacena temporalmente cálculos financieros cruciales como el Subtotal, ITBIS (impuestos) y el Total a pagar por ese renglón antes de enviarse a la API de PDF o a la base de datos.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class DetalleVenta
+    {
+        public int ProductoId { get; set; }
+        public string ProductoNombre { get; set; }
+        public int Cantidad { get; set; }
+        public decimal PrecioVentaAplicado { get; set; }
+        public decimal Total { get; set; }
+        public decimal SubTotal { get; set; }
+        public decimal Itbis { get; set; }
+    }
+}
+```
+
+#### `Producto.cs`
+**Uso en el ERP:** Es el núcleo del módulo de inventario. Guarda toda la información de la mercancía, desde su costo de adquisición y precio al público, hasta la cantidad de unidades disponibles (Stock) y a qué categoría pertenece, facilitando el control de almacén.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Producto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+        public int CategoriaId { get; set; }
+        public string CategoriaNombre { get; set; }
+        public decimal PrecioCompra { get; set; }
+        public decimal PrecioVenta { get; set; }
+        public int Stock { get; set; }
+    }
+}
+```
+
+#### `ResumenVenta.cs`
+**Uso en el ERP:** Una clase especializada para los Dashboards y paneles gerenciales. No corresponde directamente a una tabla física en SQL, sino que se utiliza para recibir los resultados consolidados de consultas complejas (JOINs y agrupaciones), mostrando ingresos, costos y márgenes de ganancia.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class ResumenVenta
+    {
+        public string Agrupador { get; set; }
+        public int CantidadVentas { get; set; }
+        public int TotalArticulos { get; set; }
+        public decimal Ingresos { get; set; }
+        public decimal Costos { get; set; }
+        public decimal Margen { get; set; }
+        public string PorcentajeMargen { get; set; }
+    }
+}
+```
+
+#### `Rol.cs`
+**Uso en el ERP:** Define los niveles de acceso al sistema (ej. Admin, Vendedor, Supervisor). Trabaja en conjunto con la tabla de Usuarios para asegurar que cada empleado solo vea las pantallas y botones a los que tiene permiso.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Rol
+    {
+        public int Id { get; set; }
+        public string NombreRol { get; set; }
+    }
+}
+```
+
+#### `Usuario.cs`
+**Uso en el ERP:** Modela los datos de inicio de sesión de cada persona que utiliza el ERP. Maneja la propiedad `NombreUsuario` (clave para evitar errores de compilación) y el hash encriptado de su contraseña, vinculando al empleado con su respectivo Rol de seguridad.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Usuario
+    {
+        public int Id { get; set; }
+        public string NombreUsuario { get; set; }
+        public string Password { get; set; }
+        public int IdRol { get; set; }
+    }
+}
+```
+
+#### `Vendedor.cs`
+**Uso en el ERP:** Almacena la información de los empleados que concretan las ventas. Es fundamental para poder rastrear qué vendedor procesó cada factura, permitiendo así el cálculo de comisiones y métricas de desempeño.
+```csharp
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Vendedor
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+        public string Codigo { get; set; }
+    }
+}
+```
+
+#### `Venta.cs`
+**Uso en el ERP:** Representa la cabecera general de una transacción comercial. Aglutina quién compró, quién vendió y en qué fecha se realizó, proporcionando una vista simplificada de la factura sin entrar en los detalles de las líneas de producto.
+```csharp
+using System;
+
+namespace CRUD_LOGIN_MAUI.Models
+{
+    public class Venta
+    {
+        public int Id { get; set; }
+        public DateTime Fecha { get; set; }
+        public string ClienteNombre { get; set; }
+        public string VendedorNombre { get; set; }
+        public string ProductoNombre { get; set; }
+        public int Cantidad { get; set; }
+        public decimal Total { get; set; }
+    }
+}
+```
+
+<br><br>
+
+---
+---
+
+### ⚙️ MÓDULO 2: CAPA DE SERVICIOS Y CONEXIONES A BD (EL MOTOR DEL SISTEMA)
+
+En el patrón MVVM y en cualquier arquitectura limpia, las "Vistas" (las pantallas que ve el usuario) **nunca** deben hablar directamente con la base de datos. Para mantener nuestro código ordenado, seguro y altamente escalable, delegamos todo el trabajo pesado a una **Capa de Servicios**.
+
+Esta capa actuará como el único intermediario (o "puente") entre nuestras pantallas y el servidor SQL. Aquí es donde vivirá la lógica pura de negocio: abrir conexiones de red, ejecutar comandos SQL (SELECT, INSERT, UPDATE, DELETE), procesar listas de datos y devolver la información masticada y lista para la interfaz gráfica.
+
+**¿Cuántos archivos conforman este módulo estratégico?**
+En nuestro Mini ERP, esta capa estará conformada exclusivamente por **3 archivos fundamentales** (clases C#):
+
+1. 🔑 **`ConfigDB.cs`**: El guardián de las llaves. Su única misión es almacenar de forma centralizada la cadena de conexión (IP del servidor, usuario y contraseña) hacia nuestro SQL Server, evitando que repitamos estos datos sensibles por todo el código.
+2. 🧠 **`VentaService.cs`**: El núcleo del sistema. Un archivo masivo que contendrá absolutamente todas las funciones asíncronas (`async/await`) para interactuar con las tablas de la base de datos (Gestión de Productos, Clientes, Vendedores, Procesamiento de Ventas y Reportes).
+3. 🖨️ **`TicketPdfService.cs`**: El diseñador gráfico en código. Se encarga de recibir los datos de una venta recién realizada, ensamblar el recibo con formato térmico de 80mm usando la librería `iText`, y guardar el archivo PDF físicamente en el dispositivo.
+
+---
+
+#### 📁 Preparación de la Carpeta: `Services/`
+**Pasos previos obligatorios:** 
+1. En el Explorador de Soluciones de Visual Studio, haz clic derecho sobre el proyecto principal **`CRUD_LOGIN_MAUI`**.
+2. Selecciona **Agregar** > **Nueva Carpeta**.
+3. Nómbrala exactamente **`Services`** (respetando la 'S' mayúscula para seguir el estándar de nomenclatura).
+
+<br>
 
 <br>
 
@@ -789,10 +963,9 @@ namespace CRUD_LOGIN_MAUI.Services
     public static class ConfigDB
     {
         public static string ConnectionString =>
-            "Server=10.0.0.15,1433;Database=LoginRolesDB_cif_MINI_ERP;User Id=JUANCITO;Password=123456;TrustServerCertificate=True;";
+            "Server=192.168.2.55,1433;Database=LoginRolesDB_cif_MINI_ERP;User Id=JUANCITO;Password=123456;TrustServerCertificate=True;";
     }
 }
-
 
 ```
 
@@ -809,13 +982,11 @@ namespace CRUD_LOGIN_MAUI.Services
 **Pasos para crearlo:** Clic derecho en `Services` > **Agregar** > **Clase**. Nómbrala `VentaService.cs` y copia este código:
 
 ```csharp
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
-using CRUD_LOGIN_MAUI.Models;
 using Microsoft.Data.SqlClient;
+using CRUD_LOGIN_MAUI.Models;
 
 namespace CRUD_LOGIN_MAUI.Services
 {
@@ -893,8 +1064,7 @@ namespace CRUD_LOGIN_MAUI.Services
         }
 
         // Inserta la Venta y sus Detalles usando una Transacción SQL para asegurar integridad
-        public async Task<List<Categoria>> GetCategorias() { var list = new List<Categoria>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); var cmd = new Microsoft.Data.SqlClient.SqlCommand("SELECT Id, Nombre FROM Categoria", conn); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()) list.Add(new Categoria { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() ?? "" }); return list; }
-        public async Task UpsertProducto(Producto p) { using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = p.Id == 0 ? "INSERT INTO Producto (Nombre, CategoriaId, PrecioCompra, PrecioVenta, Stock) VALUES (@N, @C, @PC, @PV, @S)" : "UPDATE Producto SET Nombre=@N, CategoriaId=@C, PrecioCompra=@PC, PrecioVenta=@PV, Stock=@S WHERE Id=@I"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); if (p.Id > 0) cmd.Parameters.AddWithValue("@I", p.Id); cmd.Parameters.AddWithValue("@N", p.Nombre); cmd.Parameters.AddWithValue("@C", p.CategoriaId); cmd.Parameters.AddWithValue("@PC", p.PrecioCompra); cmd.Parameters.AddWithValue("@PV", p.PrecioVenta); cmd.Parameters.AddWithValue("@S", p.Stock); await cmd.ExecuteNonQueryAsync(); }
+        public async Task<List<Categoria>> GetCategorias(){ var list = new List<Categoria>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); var cmd = new Microsoft.Data.SqlClient.SqlCommand("SELECT Id, Nombre FROM Categoria", conn); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()) list.Add(new Categoria { Id = (int)reader["Id"], Nombre = reader["Nombre"].ToString() ?? "" }); return list; } public async Task UpsertProducto(Producto p){ using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = p.Id == 0 ? "INSERT INTO Producto (Nombre, CategoriaId, PrecioCompra, PrecioVenta, Stock) VALUES (@N, @C, @PC, @PV, @S)" : "UPDATE Producto SET Nombre=@N, CategoriaId=@C, PrecioCompra=@PC, PrecioVenta=@PV, Stock=@S WHERE Id=@I"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); if (p.Id > 0) cmd.Parameters.AddWithValue("@I", p.Id); cmd.Parameters.AddWithValue("@N", p.Nombre); cmd.Parameters.AddWithValue("@C", p.CategoriaId); cmd.Parameters.AddWithValue("@PC", p.PrecioCompra); cmd.Parameters.AddWithValue("@PV", p.PrecioVenta); cmd.Parameters.AddWithValue("@S", p.Stock); await cmd.ExecuteNonQueryAsync(); } 
 
         public async Task<(bool Exito, string Mensaje)> DeleteProductoAsync(int id)
         {
@@ -905,7 +1075,7 @@ namespace CRUD_LOGIN_MAUI.Services
             using var checkCmd = new Microsoft.Data.SqlClient.SqlCommand("SELECT COUNT(*) FROM Detalle_Ventas WHERE ProductoId = @Id", conn);
             checkCmd.Parameters.AddWithValue("@Id", id);
             int count = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
-
+            
             if (count > 0)
             {
                 return (false, "No se puede eliminar este producto porque ya tiene ventas (salidas) asociadas en el sistema.");
@@ -914,18 +1084,18 @@ namespace CRUD_LOGIN_MAUI.Services
             using var deleteCmd = new Microsoft.Data.SqlClient.SqlCommand("DELETE FROM Producto WHERE Id = @Id", conn);
             deleteCmd.Parameters.AddWithValue("@Id", id);
             await deleteCmd.ExecuteNonQueryAsync();
-
+            
             return (true, "Producto eliminado correctamente.");
         }
 
-        public async Task<List<Venta>> GetReporteVentas(int? clienteId, int? vendedorId, int? productoId) { var list = new List<Venta>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = @"SELECT V.Id, V.Fecha, C.Nombre as ClienteNombre, Vend.Nombre as VendedorNombre, P.Nombre as ProductoNombre, DV.Cantidad, DV.PrecioVentaAplicado as Total FROM Ventas V INNER JOIN Cliente C ON V.ClienteId = C.Id INNER JOIN Vendedor Vend ON V.VendedorId = Vend.Id INNER JOIN Detalle_Ventas DV ON V.Id = DV.VentaId INNER JOIN Producto P ON DV.ProductoId = P.Id WHERE (@CID IS NULL OR V.ClienteId = @CID) AND (@VID IS NULL OR V.VendedorId = @VID) AND (@PID IS NULL OR DV.ProductoId = @PID) ORDER BY V.Fecha DESC"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); cmd.Parameters.AddWithValue("@CID", (object)clienteId ?? DBNull.Value); cmd.Parameters.AddWithValue("@VID", (object)vendedorId ?? DBNull.Value); cmd.Parameters.AddWithValue("@PID", (object)productoId ?? DBNull.Value); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()) { list.Add(new Venta { Id = (int)reader["Id"], Fecha = (DateTime)reader["Fecha"], ClienteNombre = reader["ClienteNombre"]?.ToString() ?? "", VendedorNombre = reader["VendedorNombre"]?.ToString() ?? "", ProductoNombre = reader["ProductoNombre"]?.ToString() ?? "", Cantidad = (int)reader["Cantidad"], Total = (decimal)reader["Total"] * (int)reader["Cantidad"] }); } return list; }
+        public async Task<List<Venta>> GetReporteVentas(int? clienteId, int? vendedorId, int? productoId){ var list = new List<Venta>(); using var conn = new Microsoft.Data.SqlClient.SqlConnection(_connectionString); await conn.OpenAsync(); string query = @"SELECT V.Id, V.Fecha, C.Nombre as ClienteNombre, Vend.Nombre as VendedorNombre, P.Nombre as ProductoNombre, DV.Cantidad, DV.PrecioVentaAplicado as Total FROM Ventas V INNER JOIN Cliente C ON V.ClienteId = C.Id INNER JOIN Vendedor Vend ON V.VendedorId = Vend.Id INNER JOIN Detalle_Ventas DV ON V.Id = DV.VentaId INNER JOIN Producto P ON DV.ProductoId = P.Id WHERE (@CID IS NULL OR V.ClienteId = @CID) AND (@VID IS NULL OR V.VendedorId = @VID) AND (@PID IS NULL OR DV.ProductoId = @PID) ORDER BY V.Fecha DESC"; var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn); cmd.Parameters.AddWithValue("@CID", (object)clienteId ?? DBNull.Value); cmd.Parameters.AddWithValue("@VID", (object)vendedorId ?? DBNull.Value); cmd.Parameters.AddWithValue("@PID", (object)productoId ?? DBNull.Value); using var reader = await cmd.ExecuteReaderAsync(); while (await reader.ReadAsync()){ list.Add(new Venta { Id = (int)reader["Id"], Fecha = (DateTime)reader["Fecha"], ClienteNombre = reader["ClienteNombre"]?.ToString() ?? "", VendedorNombre = reader["VendedorNombre"]?.ToString() ?? "", ProductoNombre = reader["ProductoNombre"]?.ToString() ?? "", Cantidad = (int)reader["Cantidad"], Total = (decimal)reader["Total"] * (int)reader["Cantidad"] }); } return list; } 
 
         public async Task<List<ResumenVenta>> GetResumenHistoricoAsync(DateTime fechaInicio, DateTime fechaFin, string agrupacion)
         {
             var list = new List<ResumenVenta>();
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
-
+            
             string agrupadorSql = "";
             string selectAgrupador = "";
 
@@ -1072,7 +1242,6 @@ namespace CRUD_LOGIN_MAUI.Services
     }
 }
 
-
 ```
 
 <br>
@@ -1088,19 +1257,16 @@ namespace CRUD_LOGIN_MAUI.Services
 **Pasos para crearlo:** Clic derecho en `Services` > **Agregar** > **Clase**. Nómbrala `TicketPdfService.cs` y copia este código:
 
 ```csharp
-
-using iText.Kernel.Geom;
-using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Element;
-using iText.Layout.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-
-
 using CRUD_LOGIN_MAUI.Models;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Layout.Properties;
+using iText.Kernel.Geom;
 
 namespace CRUD_LOGIN_MAUI.Services
 {
@@ -1112,7 +1278,7 @@ namespace CRUD_LOGIN_MAUI.Services
             {
                 // Definir la ruta local en el dispositivo dependiendo del OS
                 string fileName = $"Ticket_{numeroVenta}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-
+                
                 // FileSystem.CacheDirectory es ideal en MAUI para guardar archivos temporales como PDFs generados y abrirlos.
                 string rutaPdf = System.IO.Path.Combine(Microsoft.Maui.Storage.FileSystem.CacheDirectory, fileName);
 
@@ -1135,33 +1301,33 @@ namespace CRUD_LOGIN_MAUI.Services
                             document.Add(new Paragraph("RNC: 101-12345-6")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                                 .SetFontSize(10));
-
+                            
                             document.Add(new Paragraph("Av. Principal #123")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                                 .SetFontSize(10));
-
+                                
                             document.Add(new Paragraph("Tel: 829-555-0000")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                                 .SetFontSize(10));
 
                             document.Add(new Paragraph("----------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-
+                            
                             // Información general
                             document.Add(new Paragraph($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}").SetFontSize(10));
                             document.Add(new Paragraph($"Ticket: #{numeroVenta:D5}").SetFontSize(10));
                             document.Add(new Paragraph($"Cliente: {cliente.Nombre}").SetFontSize(10));
                             document.Add(new Paragraph($"Vendedor: {vendedorNombre}").SetFontSize(10));
-
+                            
                             document.Add(new Paragraph("----------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-
+                            
                             // Tabla de Detalles
                             Table table = new Table(UnitValue.CreatePercentArray(new float[] { 55, 15, 30 })).UseAllAvailableWidth();
-
+                            
                             // Cabeceras de tabla
                             table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new Paragraph("DESCRIPCIÓN").SetFontSize(10)).SetBorder(iText.Layout.Borders.Border.NO_BORDER));
                             table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new Paragraph("CANT").SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)).SetBorder(iText.Layout.Borders.Border.NO_BORDER));
                             table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new Paragraph("TOT").SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)).SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-
+                            
                             // Lista de productos iterados del carrito
                             foreach (var item in carrito)
                             {
@@ -1169,11 +1335,11 @@ namespace CRUD_LOGIN_MAUI.Services
                                 table.AddCell(new iText.Layout.Element.Cell().Add(new Paragraph($"x{item.Cantidad}").SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)).SetBorder(iText.Layout.Borders.Border.NO_BORDER));
                                 table.AddCell(new iText.Layout.Element.Cell().Add(new Paragraph(item.Total.ToString("C")).SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)).SetBorder(iText.Layout.Borders.Border.NO_BORDER));
                             }
-
+                            
                             document.Add(table);
-
+                            
                             document.Add(new Paragraph("----------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-
+                            
                             // Cálculos finales: SubTotal, ITBIS, TOTAL
                             // Dado que SQL calcula Itbis como Subtotal * 0.18 y Total como SubTotal * 1.18
                             decimal subTotal = totalGeneral / 1.18m;
@@ -1183,17 +1349,17 @@ namespace CRUD_LOGIN_MAUI.Services
                             document.Add(new Paragraph($"SubTotal: {subTotal:C}")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                                 .SetFontSize(10));
-
+                                
                             document.Add(new Paragraph($"ITBIS 18%: {itbis:C}")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                                 .SetFontSize(10));
-
+                                
                             document.Add(new Paragraph($"TOTAL: {totalGeneral:C}")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                                 .SetFontSize(12));
-
+                            
                             document.Add(new Paragraph("----------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-
+                            
                             Paragraph footer = new Paragraph("¡GRACIAS POR SU\nCOMPRA!")
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                                 .SetFontSize(10);
@@ -1201,13 +1367,12 @@ namespace CRUD_LOGIN_MAUI.Services
                         }
                     }
                 }
-
+                
                 return rutaPdf;
             });
         }
     }
 }
-
 
 ```
 
@@ -1216,13 +1381,29 @@ namespace CRUD_LOGIN_MAUI.Services
 ---
 ---
 
-### ⚙️ MÓDULO 3: VISTAS / INTERFACES DE USUARIO (CARPETA `Views/`)
+### ⚙️ MÓDULO 3: VISTAS / INTERFACES DE USUARIO (EL ROSTRO DEL SISTEMA)
 
-En el patrón MVVM y .NET MAUI, las interfaces tienen dos caras estrictamente separadas:
-1. **La parte Gráfica (`.xaml`)**: Los colores, botones, márgenes, diseño (Lo que el cliente ve).
-2. **La parte Lógica (`.xaml.cs`)**: El Code-Behind que atrapa los clics, valida reglas y se comunica con los Servicios.
+#### 📁 La Carpeta: `Views/`
+En la arquitectura de software, la capa de "Vistas" (Views) es el punto de encuentro entre el usuario final y tu lógica de negocio. Es literalmente el rostro del sistema. Su único propósito es presentar información de manera atractiva (UI) y capturar las interacciones del usuario (clics, texto ingresado) para enviarlas a la capa de Servicios que creamos en el módulo anterior.
 
-A continuación, mapearemos cada pantalla una por una con ambas caras claramente separadas por un divisor.
+**¿Cuántas pantallas conforman nuestro Mini ERP?**
+Este sistema cuenta con **9 pantallas principales**. Sin embargo, debido a la naturaleza de .NET MAUI y el patrón MVVM, cada pantalla está compuesta obligatoriamente por **2 archivos complementarios**, lo que nos da un total de **18 archivos** en esta carpeta:
+
+1. 🎨 **La parte Gráfica (`.xaml`)**: Escrita en lenguaje de marcado (similar a HTML). Aquí definimos toda la estética: los colores, tamaños de botones, márgenes, tablas y cómo se adapta el diseño a celulares o computadoras. *¡El XAML no piensa ni calcula, solo dibuja!*
+2. 🧠 **La parte Lógica (`.xaml.cs`)**: Conocida como el "Code-Behind". Está escrita en C#. Es el cerebro inmediato de la pantalla: atrapa los clics de los botones del `.xaml`, recoge lo que el usuario escribió y llama a nuestro `VentaService.cs` para procesar la acción en SQL.
+
+**Inventario de Pantallas (9 en total):**
+1. **`MainPage`**: La puerta de seguridad (Login) que valida y enruta por roles.
+2. **`AdminPage`**: El dashboard central con acceso absoluto.
+3. **`AlmacenistaPage`**: El panel restringido para encargados de bodega.
+4. **`InventarioPage`**: Donde ocurre la magia del CRUD (Crear, Leer, Actualizar, Borrar) de productos.
+5. **`ReportesPage`**: Centro de visualización de métricas.
+6. **`ResumenVentasPage`**: Panel financiero con KPIs (Ingresos, costos, y márgenes de ganancia).
+7. **`RolesPage`**: Módulo administrativo para asignación de roles de seguridad.
+8. **`SupervisorPage`**: Dashboard intermedio de revisión.
+9. **`VendedorPage`**: El poderoso terminal de Punto de Venta (POS) donde se agregan productos al carrito y se imprimen los tickets térmicos.
+
+A continuación, construiremos cada pantalla una por una. Te daremos primero su rostro gráfico (`.xaml`) y justo debajo su cerebro lógico (`.xaml.cs`), separados claramente para que no te pierdas.
 
 <br><br>
 
@@ -1294,7 +1475,6 @@ Es la parte gráfica de la pantalla de inicio de sesión. Aquí diseñamos las c
 
     </VerticalStackLayout>
 </ContentPage>
-
 
 ```
 
@@ -1403,7 +1583,6 @@ namespace CRUD_LOGIN_MAUI.Views
     }
 }
 
-
 ```
 
 <br>
@@ -1509,7 +1688,6 @@ Diseño de la pantalla administrativa. Contiene los campos, listas y botones par
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
-
 
 ```
 
@@ -1743,7 +1921,6 @@ public partial class AdminPage : ContentPage
     }
 }
 
-
 ```
 
 <br>
@@ -1824,7 +2001,6 @@ Diseño visual para el catálogo de roles (ej. Administrador, Vendedor). Incluye
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
-
 
 ```
 
@@ -2010,29 +2186,28 @@ Interfaz para gestionar los productos de la tienda. Incluye campos de costo, pre
             <Entry x:Name="txtNombre" Placeholder="Nombre del Producto" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
 
             <Label Text="CATEGORÍA" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
-            <Picker x:Name="pickerCategoria" Title="-- Seleccione --" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False"
-                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="70" TitleColor="Black" FontAttributes="Bold"/>
-                <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
-                    <VerticalStackLayout Grid.Column="0">
-                        <Label Text="COSTO" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
-                        <Entry x:Name="txtPrecioCompra" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Grid.Column="1">
-                        <Label Text="VENTA" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
-                        <Entry x:Name="txtPrecioVenta" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
-                    </VerticalStackLayout>
-                </Grid>
+            <Picker x:Name="pickerCategoria" Title="-- Seleccione --" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False"`r`n                    BackgroundColor="#F0F0F0" TextColor="Black" HeightRequest="70" TitleColor="Black" FontAttributes="Bold"/>
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="COSTO" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
+                    <Entry x:Name="txtPrecioCompra" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1">
+                    <Label Text="VENTA" FontSize="12" TextColor="Black" FontAttributes="Bold"/>
+                    <Entry x:Name="txtPrecioVenta" Placeholder="0.00" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+                </VerticalStackLayout>
+            </Grid>
 
-                <Label Text="STOCK" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
-                <Entry x:Name="txtStock" Placeholder="0" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
-                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="10" Margin="0,10">
-                    <Button Grid.Row="0" Grid.Column="0" Text="GUARDAR" Clicked="OnGuardar" BackgroundColor="Green" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
-                    <Button Grid.Row="0" Grid.Column="1" Text="LIMPIAR" Clicked="OnLimpiar" BackgroundColor="Gray" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
-                    <Button Grid.Row="1" Grid.Column="0" Text="ELIMINAR" Clicked="OnEliminar" BackgroundColor="Red" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
-                    <Button Grid.Row="1" Grid.Column="1" Text="GENERAR PDF" Clicked="OnGenerarPDF" BackgroundColor="DarkBlue" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
-                </Grid>
+            <Label Text="STOCK" FontSize="12" TextColor="Black" FontAttributes="Bold" Margin="5,0"/>
+            <Entry x:Name="txtStock" Placeholder="0" Keyboard="Numeric" TextColor="Black" BackgroundColor="#F0F0F0" FontAttributes="Bold" HeightRequest="45"/>
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="10" Margin="0,10">
+                <Button Grid.Row="0" Grid.Column="0" Text="GUARDAR" Clicked="OnGuardar" BackgroundColor="Green" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="0" Grid.Column="1" Text="LIMPIAR" Clicked="OnLimpiar" BackgroundColor="Gray" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="1" Grid.Column="0" Text="ELIMINAR" Clicked="OnEliminar" BackgroundColor="Red" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+                <Button Grid.Row="1" Grid.Column="1" Text="GENERAR PDF" Clicked="OnGenerarPDF" BackgroundColor="DarkBlue" TextColor="White" FontAttributes="Bold" CornerRadius="8"/>
+            </Grid>
         </VerticalStackLayout>
-
+        
         <Grid Grid.Row="1" RowDefinitions="Auto, *">
             <!-- SearchBar para filtros dinámicos -->
             <SearchBar x:Name="searchBar" Grid.Row="0" Placeholder="Buscar producto por nombre o categoría..." 
@@ -2040,30 +2215,29 @@ Interfaz para gestionar los productos de la tienda. Incluye campos de costo, pre
 
             <CollectionView Grid.Row="1" x:Name="ListaProductos" SelectionMode="Single" SelectionChanged="OnSelectionChanged">
                 <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:Producto">
-                        <Frame Margin="0,5" Padding="20" BorderColor="Black" BackgroundColor="White" HasShadow="True" CornerRadius="10" InputTransparent="True">
-                            <Grid ColumnDefinitions="*, Auto">
-                                <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                    <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="17" TextColor="Black"/>
-                                    <Label Text="{Binding CategoriaNombre, StringFormat='Categoría: {0}'}" FontSize="13" FontAttributes="Bold" TextColor="#333333"/>
-                                    <Label Text="{Binding Stock, StringFormat='Existencia: {0}'}" TextColor="#0056B3" FontAttributes="Bold" FontSize="14"/>
-                                </VerticalStackLayout>
-                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                                    <Label Text="{Binding PrecioVenta, StringFormat='{0:C}'}" FontAttributes="Bold" TextColor="DarkGreen" FontSize="18" HorizontalOptions="End"/>
-                                    <Label Text="{Binding PrecioCompra, StringFormat='Costo: {0:C}'}" FontSize="11" FontAttributes="Bold" TextColor="DarkRed" HorizontalOptions="End"/>
-                                </VerticalStackLayout>
-                            </Grid>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Producto">
+                    <Frame Margin="0,5" Padding="20" BorderColor="Black" BackgroundColor="White" HasShadow="True" CornerRadius="10" InputTransparent="True">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="17" TextColor="Black"/>
+                                <Label Text="{Binding CategoriaNombre, StringFormat='Categoría: {0}'}" FontSize="13" FontAttributes="Bold" TextColor="#333333"/>
+                                <Label Text="{Binding Stock, StringFormat='Existencia: {0}'}" TextColor="#0056B3" FontAttributes="Bold" FontSize="14"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                <Label Text="{Binding PrecioVenta, StringFormat='{0:C}'}" FontAttributes="Bold" TextColor="DarkGreen" FontSize="18" HorizontalOptions="End"/>
+                                <Label Text="{Binding PrecioCompra, StringFormat='Costo: {0:C}'}" FontSize="11" FontAttributes="Bold" TextColor="DarkRed" HorizontalOptions="End"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
         </Grid>
     </Grid>
 </ContentPage>
-
 
 ```
 
@@ -2221,7 +2395,7 @@ namespace CRUD_LOGIN_MAUI.Views
             }
             else
             {
-                ListaProductos.ItemsSource = allProducts.Where(p =>
+                ListaProductos.ItemsSource = allProducts.Where(p => 
                     (p.Nombre != null && p.Nombre.ToLowerInvariant().Contains(keyword)) ||
                     (p.CategoriaNombre != null && p.CategoriaNombre.ToLowerInvariant().Contains(keyword))
                 ).ToList();
@@ -2261,7 +2435,7 @@ namespace CRUD_LOGIN_MAUI.Views
                         document.Add(new iText.Layout.Element.Paragraph("--------------------------------------------------").SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
 
                         iText.Layout.Element.Table table = new iText.Layout.Element.Table(iText.Layout.Properties.UnitValue.CreatePercentArray(new float[] { 35, 25, 10, 15, 15 })).UseAllAvailableWidth();
-
+                        
                         table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("PRODUCTO").SetFontSize(10)));
                         table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("CATEGORIA").SetFontSize(10)));
                         table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("STOCK").SetFontSize(10)));
@@ -2276,9 +2450,9 @@ namespace CRUD_LOGIN_MAUI.Views
                             table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(prod.PrecioCompra.ToString("C")).SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
                             table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(prod.PrecioVenta.ToString("C")).SetFontSize(10).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
                         }
-
+                        
                         document.Add(table);
-
+                        
                         document.Add(new iText.Layout.Element.Paragraph($"\nTOTAL PRODUCTOS: {productos.Count}")
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT).SetFontSize(12));
                         document.Add(new iText.Layout.Element.Paragraph($"Valor aproximado (al costo): {productos.Sum(p => p.PrecioCompra * p.Stock):C}")
@@ -2301,7 +2475,6 @@ namespace CRUD_LOGIN_MAUI.Views
         }
     }
 }
-
 
 ```
 
@@ -2397,7 +2570,6 @@ Una pantalla con un buscador en tiempo real, múltiples selectores (Vendedor, Cl
         </Frame>
     </Grid>
 </ContentPage>
-
 ```
 
 #### 📁 Archivo 2: El Code-Behind (Lógica) -> `ReportesPage.xaml.cs`
@@ -2410,14 +2582,14 @@ Controla la recarga de los filtros (Drop-downs), gestiona las consultas a la bas
 2. Pega este código:
 
 ```csharp
-
+﻿using CRUD_LOGIN_MAUI.Models;        // Modelos del CRUD
+using CRUD_LOGIN_MAUI.Services;      // Servicios de acceso a datos
+using System.Collections.ObjectModel; // Listas dinámicas para la UI
 //using QuestPDF.Fluent;                // Construcción fluida de PDFs
 //using QuestPDF.Helpers;               // Colores y utilidades visuales
 //using QuestPDF.Infrastructure;        // Interfaces base de QuestPDF
 using System.IO;                      // Manejo de archivos y streams
-using CRUD_LOGIN_MAUI.Models;        // Modelos del CRUD
-using CRUD_LOGIN_MAUI.Services;      // Servicios de acceso a datos
-using System.Collections.ObjectModel; // Listas dinámicas para la UI
+
 
 namespace CRUD_LOGIN_MAUI.Views
 {
@@ -2637,8 +2809,6 @@ namespace CRUD_LOGIN_MAUI.Views
 
     }
 }
-
-
 ```
 
 <br>
@@ -2747,8 +2917,6 @@ Pantalla táctica con filtros de fechas rápidos (Hoy, Esta Semana, Este Mes) qu
         </Frame>
     </Grid>
 </ContentPage>
-
-
 ```
 
 #### 📁 Archivo 4: El Code-Behind (Lógica) -> `ResumenVentasPage.xaml.cs`
@@ -2834,8 +3002,6 @@ namespace CRUD_LOGIN_MAUI.Views
         }
     }
 }
-
-
 ```
 
 <br>
@@ -2867,7 +3033,7 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
              BackgroundColor="#F7F9FC">
 
     <Grid RowDefinitions="Auto, Auto, *" Padding="15" RowSpacing="15">
-
+        
         <!-- HEADER -->
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto, Auto" ColumnSpacing="10" Margin="0,5">
             <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
@@ -2916,13 +3082,13 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
                 <DataTemplate x:CompileBindings="False">
                     <Border StrokeShape="RoundRectangle 10" Stroke="#E0E0E0" BackgroundColor="White" Margin="0,0,0,12" Padding="15">
                         <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
-
+                            
                             <!-- Izquierda: Info Producto -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
                                 <Label Text="{Binding [Producto]}" FontSize="16" FontAttributes="Bold" TextColor="#2C3E50"/>
                                 <Label Text="{Binding [Categoria]}" FontSize="13" TextColor="#7F8C8D"/>
                             </VerticalStackLayout>
-
+                            
                             <!-- Derecha: Valor -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="1" HorizontalOptions="End" VerticalOptions="Center">
                                 <Label Text="Valor Actual" FontSize="11" TextColor="#95A5A6" HorizontalOptions="End"/>
@@ -2955,7 +3121,6 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
 
     </Grid>
 </ContentPage>
-
 
 ```
 
@@ -3127,155 +3292,7 @@ namespace CRUD_LOGIN_MAUI.Views
             }
         }
     }
-}using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Maui.Controls;
-using CRUD_LOGIN_MAUI.Services;
-using Microsoft.Maui.ApplicationModel;
-using System.IO;
-
-namespace CRUD_LOGIN_MAUI.Views
-{
-    public partial class AlmacenistaPage : ContentPage
-    {
-        private VentaService _service = new VentaService();
-        private List<Dictionary<string, object>> _currentData = new List<Dictionary<string, object>>();
-
-        public AlmacenistaPage()
-        {
-            InitializeComponent();
-        }
-
-        protected override async void OnAppearing()
-        {
-            base.OnAppearing();
-            await CargarDatos();
-        }
-
-        private async Task CargarDatos()
-        {
-            try
-            {
-                _currentData = await _service.GetReporteAlmacen();
-
-                // Actualizar KPIs
-                lblTotalProd.Text = _currentData.Count.ToString();
-
-                decimal valorTotal = _currentData.Sum(d => Convert.ToDecimal(d["ValorInventario"]));
-                lblValorInv.Text = valorTotal.ToString("C");
-
-                int entradas = _currentData.Sum(d => Convert.ToInt32(d["StockInicialEntradas"]));
-                lblTotalEntradas.Text = entradas.ToString("N0");
-
-                int salidas = _currentData.Sum(d => Convert.ToInt32(d["TotalSalidas"]));
-                lblTotalSalidas.Text = salidas.ToString("N0");
-
-                // Asignar al CollectionView
-                listaAlmacen.ItemsSource = _currentData;
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("❌ Error", "No se pudo cargar el reporte: " + ex.Message, "Entendido");
-            }
-        }
-
-        private async void OnLogoutClicked(object sender, EventArgs e)
-        {
-            bool answer = await DisplayAlert("🔒 Confirmación", "¿Estás seguro de que deseas cerrar tu sesión?", "Sí, salir", "No, quedarme");
-            if (answer)
-            {
-                await Shell.Current.GoToAsync("//MainPage");
-            }
-        }
-
-        private async void OnCrudClicked(object sender, EventArgs e)
-        {
-            await Shell.Current.GoToAsync("InventarioPage");
-        }
-
-        private async void OnPdfClicked(object sender, EventArgs e)
-        {
-            if (_currentData == null || _currentData.Count == 0)
-            {
-                await DisplayAlert("⚠️ Vacío", "No hay datos para generar el reporte.", "OK");
-                return;
-            }
-
-            try
-            {
-                string fileName = $"Reporte_Almacen_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                string filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
-
-                using (var writer = new iText.Kernel.Pdf.PdfWriter(filePath))
-                {
-                    using (var pdf = new iText.Kernel.Pdf.PdfDocument(writer))
-                    {
-                        var document = new iText.Layout.Document(pdf, iText.Kernel.Geom.PageSize.A4);
-                        document.SetMargins(30, 30, 30, 30);
-
-                        // Cabecera
-                        document.Add(new iText.Layout.Element.Paragraph("📦 SUPERMARKET JPV - ALMACÉN")
-                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetFontSize(16));
-                        document.Add(new iText.Layout.Element.Paragraph("REPORTE DE ROTACIÓN DE INVENTARIO")
-                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetFontSize(14));
-                        document.Add(new iText.Layout.Element.Paragraph($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}")
-                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-                        document.Add(new iText.Layout.Element.Paragraph("-------------------------------------------------------------------------")
-                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
-
-                        // KPIs Globales
-                        decimal totalValor = _currentData.Sum(d => Convert.ToDecimal(d["ValorInventario"]));
-                        int totalEntradas = _currentData.Sum(d => Convert.ToInt32(d["StockInicialEntradas"]));
-                        int totalSalidas = _currentData.Sum(d => Convert.ToInt32(d["TotalSalidas"]));
-
-                        document.Add(new iText.Layout.Element.Paragraph($"TOTAL PRODUCTOS: {_currentData.Count} | VALOR INVENTARIO: {totalValor:C}").SetFontSize(12));
-                        document.Add(new iText.Layout.Element.Paragraph($"TOTAL ENTRADAS: {totalEntradas} | TOTAL SALIDAS: {totalSalidas}").SetFontSize(12));
-                        document.Add(new iText.Layout.Element.Paragraph("\n"));
-
-                        // Tabla
-                        iText.Layout.Element.Table table = new iText.Layout.Element.Table(iText.Layout.Properties.UnitValue.CreatePercentArray(new float[] { 30, 20, 12, 12, 12, 14 })).UseAllAvailableWidth();
-
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("PRODUCTO").SetFontSize(10)));
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("CATEGORÍA").SetFontSize(10)));
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("ENTRADAS").SetFontSize(10)));
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("SALIDAS").SetFontSize(10)));
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("STOCK").SetFontSize(10)));
-                        table.AddHeaderCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph("VALOR").SetFontSize(10)));
-
-                        foreach (var item in _currentData)
-                        {
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(item["Producto"].ToString()).SetFontSize(9)));
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(item["Categoria"].ToString()).SetFontSize(9)));
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(item["StockInicialEntradas"].ToString()).SetFontSize(9).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)));
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(item["TotalSalidas"].ToString()).SetFontSize(9).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)));
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(item["StockActual"].ToString()).SetFontSize(9).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)));
-                            table.AddCell(new iText.Layout.Element.Cell().Add(new iText.Layout.Element.Paragraph(Convert.ToDecimal(item["ValorInventario"]).ToString("C")).SetFontSize(9).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)));
-                        }
-
-                        document.Add(table);
-                    }
-                }
-
-                await Launcher.Default.OpenAsync(new OpenFileRequest
-                {
-                    File = new ReadOnlyFile(filePath),
-                    Title = "Reporte de Rotación Almacén"
-                });
-
-                await DisplayAlert("✅ Éxito", "Reporte de almacén generado y abierto.", "Genial");
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("❌ Error", $"No se pudo generar el PDF:\n{ex.Message}", "Entendido");
-            }
-        }
-    }
 }
-
 
 ```
 
@@ -3309,20 +3326,20 @@ El corazón de la venta. Diseño visual de una caja registradora, con selectores
              Shell.NavBarIsVisible="False">
 
     <Grid RowDefinitions="Auto, *, Auto" Padding="20">
-
+        
         <!-- Header: Cliente y Producto -->
         <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,20">
             <Label Text="🛍️ NUEVA VENTA" FontSize="24" FontAttributes="Bold" TextColor="#1e293b"/>
-
+            
             <Frame BackgroundColor="White" Padding="15" CornerRadius="10" HasShadow="True" BorderColor="#cbd5e1">
                 <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" ColumnSpacing="15" RowSpacing="15">
-
+                    
                     <Picker x:Name="pickerCliente" Title="👤 Seleccione Cliente" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False" Grid.Row="0" Grid.Column="0"/>
-
+                    
                     <Picker x:Name="pickerProducto" Title="📦 Seleccione Producto" ItemDisplayBinding="{Binding Nombre}" x:CompileBindings="False" Grid.Row="0" Grid.Column="1"/>
-
+                    
                     <Entry x:Name="txtCantidad" Placeholder="Cantidad" Keyboard="Numeric" Grid.Row="1" Grid.Column="0"/>
-
+                    
                     <Button Text="➕ Agregar al Carrito" BackgroundColor="#10b981" TextColor="White" Clicked="OnAgregarClicked" Grid.Row="1" Grid.Column="1"/>
                 </Grid>
             </Frame>
@@ -3337,7 +3354,7 @@ El corazón de la venta. Diseño visual de una caja registradora, con selectores
                     <Label Text="Precio" FontAttributes="Bold" HorizontalTextAlignment="End" Grid.Column="2"/>
                     <Label Text="Total" FontAttributes="Bold" HorizontalTextAlignment="End" Grid.Column="3"/>
                 </Grid>
-
+                
                 <CollectionView x:Name="listaCarrito" Margin="0,10,0,0">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:DetalleVenta">
@@ -3361,14 +3378,13 @@ El corazón de la venta. Diseño visual de una caja registradora, con selectores
                     <Label x:Name="lblTotal" Text="$0.00" TextColor="#10b981" FontSize="28" FontAttributes="Bold" Grid.Column="1"/>
                 </Grid>
             </Frame>
-
+            
             <Button Text="💵 COBRAR E IMPRIMIR" BackgroundColor="#3b82f6" TextColor="White" FontSize="18" FontAttributes="Bold" HeightRequest="60" CornerRadius="10" Clicked="OnCobrarClicked"/>
             <Button Text="📊 VER REPORTE HISTÓRICO" BackgroundColor="#8b5cf6" TextColor="White" FontSize="16" FontAttributes="Bold" HeightRequest="50" CornerRadius="10" Clicked="OnVerReporteClicked"/>
             <Button Text="Cerrar sesión" BackgroundColor="#ef4444" TextColor="White" Margin="0,10,0,0" Clicked="OnLogoutClicked"/>
         </VerticalStackLayout>
     </Grid>
 </ContentPage>
-
 
 ```
 
@@ -3498,7 +3514,7 @@ namespace CRUD_LOGIN_MAUI.Views
 
             // NOTA: Para un sistema completo el VendedorId vendría de la sesión activa en MainPage.
             // Para fines de prueba usaremos el ID 1 de forma temporal.
-            int vendedorId = 1;
+            int vendedorId = 1; 
 
             try
             {
@@ -3506,14 +3522,14 @@ namespace CRUD_LOGIN_MAUI.Views
                 if (ventaId > 0)
                 {
                     await DisplayAlert("✅ Éxito", "Venta procesada exitosamente.", "Excelente");
-
+                    
                     // Generación del PDF con iText7 local
                     var pdfService = new TicketPdfService();
                     string rutaPdf = await pdfService.GenerarTicketPDFAsync(ventaId, clienteSeleccionado, "Vendedor " + vendedorId, Carrito.ToList(), _totalGeneral);
-
+                    
                     // Mostrar alerta
                     await DisplayAlert("🖨️ Ticket Impreso", $"El ticket se generó con éxito.\nAbriendo documento...", "Genial");
-
+                    
                     // Abrir el archivo PDF automáticamente para que el usuario lo vea
                     await Microsoft.Maui.ApplicationModel.Launcher.Default.OpenAsync(
                         new Microsoft.Maui.ApplicationModel.OpenFileRequest("Ver Ticket", new Microsoft.Maui.Storage.ReadOnlyFile(rutaPdf))
@@ -3523,7 +3539,7 @@ namespace CRUD_LOGIN_MAUI.Views
                     _totalGeneral = 0;
                     lblTotal.Text = "$0.00";
                     pickerCliente.SelectedIndex = -1;
-
+                    
                     // Recargar stock de productos
                     var productos = await _ventaService.GetProductosAsync();
                     pickerProducto.ItemsSource = productos;
@@ -3550,7 +3566,6 @@ namespace CRUD_LOGIN_MAUI.Views
         }
     }
 }
-
 
 ```
 
@@ -3616,7 +3631,7 @@ Un panel de navegación simple con botones de acceso directo para que un supervi
                 WidthRequest="280"
                 HeightRequest="50"
                 Margin="0,10,0,0" />
-
+                
         <Button Text="📈 VER DASHBOARD HISTÓRICO" 
                 Clicked="OnVerReporteClicked" 
                 BackgroundColor="#8b5cf6" 
@@ -3634,7 +3649,6 @@ Un panel de navegación simple con botones de acceso directo para que un supervi
                 Margin="0,20,0,0" />
     </VerticalStackLayout>
 </ContentPage>
-
 
 ```
 
@@ -3697,7 +3711,6 @@ namespace CRUD_LOGIN_MAUI.Views
     }
 }
 
-
 ```
 
 <br>
@@ -3724,7 +3737,7 @@ Para demostrar cómo funciona de manera aislada (Mocking Básico), hemos creado 
 ### 📄 Ejemplo Práctico: VentaServiceTests.cs
 Aquí puedes ver la anatomía de una prueba unitaria (AAA: Arrange, Act, Assert):
 
-```csharp
+`csharp
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Moq;

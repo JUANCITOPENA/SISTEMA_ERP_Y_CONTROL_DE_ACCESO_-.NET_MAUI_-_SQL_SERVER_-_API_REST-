@@ -3737,7 +3737,7 @@ Para demostrar cómo funciona de manera aislada (Mocking Básico), hemos creado 
 ### 📄 Ejemplo Práctico: VentaServiceTests.cs
 Aquí puedes ver la anatomía de una prueba unitaria (AAA: Arrange, Act, Assert):
 
-`csharp
+```csharp
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Moq;
@@ -3775,7 +3775,7 @@ namespace CRUD_LOGIN_MAUI.Tests
         }
     }
 }
-`
+```
 
 **Para correr estas pruebas didácticas localmente:**
 1. Abre tu terminal en la ruta principal.

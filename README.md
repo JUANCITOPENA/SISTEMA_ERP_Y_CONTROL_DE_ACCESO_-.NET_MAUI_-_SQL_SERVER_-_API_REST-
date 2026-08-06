@@ -3170,7 +3170,7 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
              BackgroundColor="#F7F9FC">
 
     <Grid RowDefinitions="Auto, Auto, *" Padding="15" RowSpacing="15">
-        
+
         <!-- HEADER -->
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto, Auto" ColumnSpacing="10" Margin="0,5">
             <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
@@ -3219,13 +3219,13 @@ Pantalla visual con tarjetas (Cards) o KPIs que muestran un resumen táctico de 
                 <DataTemplate x:CompileBindings="False">
                     <Border StrokeShape="RoundRectangle 10" Stroke="#E0E0E0" BackgroundColor="White" Margin="0,0,0,12" Padding="15">
                         <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
-                            
+
                             <!-- Izquierda: Info Producto -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
                                 <Label Text="{Binding [Producto]}" FontSize="16" FontAttributes="Bold" TextColor="#2C3E50"/>
                                 <Label Text="{Binding [Categoria]}" FontSize="13" TextColor="#7F8C8D"/>
                             </VerticalStackLayout>
-                            
+
                             <!-- Derecha: Valor -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="1" HorizontalOptions="End" VerticalOptions="Center">
                                 <Label Text="Valor Actual" FontSize="11" TextColor="#95A5A6" HorizontalOptions="End"/>
